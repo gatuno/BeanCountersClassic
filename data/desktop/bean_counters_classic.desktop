@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Name=Bean Counters Classic
+Icon=coffee_bag
+Comment=Play Bean Counters Classic
+Exec=bean-counters-classic
+Categories=Game;
