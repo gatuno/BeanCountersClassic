@@ -38,18 +38,35 @@
 
 #include "path.h"
 
+#include "gfx_blit_func.h"
+
 #define FPS (1000/24)
+#define RANDOM(x) ((int) (x ## .0 * rand () / (RAND_MAX + 1.0)))
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#define RMASK 0xff000000
+#define GMASK 0x00ff0000
+#define BMASK 0x0000ff00
+#define AMASK 0x000000ff
+#else
+#define RMASK 0x000000ff
+#define GMASK 0x0000ff00
+#define BMASK 0x00ff0000
+#define AMASK 0xff000000
+#endif
 
 /* Enumerar las imágenes */
 enum {
-	IMG_NONE,
+	IMG_BACKGROUND,
+	IMG_PLATAFORM,
 	
 	NUM_IMAGES
 };
 
 /* Los nombres de archivos */
 const char *images_names[NUM_IMAGES] = {
-	"images/none.png",
+	"images/background.png",
+	"images/plataform.png"
 };
 
 enum {
@@ -69,17 +86,159 @@ enum {
 	GAME_QUIT
 };
 
+/* Imágenes de los pingüinos */
+enum {
+	IMG_PENGUIN_1_BACK,
+	IMG_PENGUIN_1_COLOR,
+	IMG_PENGUIN_1_FRONT,
+	
+	IMG_PENGUIN_2_BACK,
+	IMG_PENGUIN_2_COLOR,
+	IMG_PENGUIN_2_FRONT,
+	
+	IMG_PENGUIN_3_BACK,
+	IMG_PENGUIN_3_COLOR,
+	IMG_PENGUIN_3_FRONT,
+	
+	IMG_PENGUIN_4_BACK,
+	IMG_PENGUIN_4_COLOR,
+	IMG_PENGUIN_4_FRONT,
+	
+	IMG_PENGUIN_5_BACK,
+	IMG_PENGUIN_5_COLOR,
+	IMG_PENGUIN_5_1_FRONT,
+	IMG_PENGUIN_5_2_FRONT,
+	IMG_PENGUIN_5_3_FRONT,
+	
+	IMG_PENGUIN_6_1_BACK,
+	IMG_PENGUIN_6_2_BACK,
+	IMG_PENGUIN_6_1_COLOR,
+	IMG_PENGUIN_6_2_COLOR,
+	
+	IMG_PENGUIN_6_1_FRONT,
+	IMG_PENGUIN_6_2_FRONT,
+	IMG_PENGUIN_6_3_FRONT,
+	IMG_PENGUIN_6_4_FRONT,
+	IMG_PENGUIN_6_5_FRONT,
+	IMG_PENGUIN_6_6_FRONT,
+	
+	IMG_PENGUIN_7_BACK,
+	IMG_PENGUIN_7_COLOR,
+	IMG_PENGUIN_7_FRONT,
+	
+	IMG_PENGUIN_8_BACK,
+	IMG_PENGUIN_8_COLOR,
+	IMG_PENGUIN_8_1_FRONT,
+	IMG_PENGUIN_8_2_FRONT,
+	IMG_PENGUIN_8_3_FRONT,
+	
+	NUM_PENGUIN_IMGS
+};
+
+const char *penguin_images_names[NUM_PENGUIN_IMGS] = {
+	"images/penguin_1_back.png",
+	"images/penguin_1_color.png",
+	"images/penguin_1_front.png",
+	
+	"images/penguin_2_back.png",
+	"images/penguin_2_color.png",
+	"images/penguin_2_front.png",
+	
+	"images/penguin_3_back.png",
+	"images/penguin_3_color.png",
+	"images/penguin_3_front.png",
+	
+	"images/penguin_4_back.png",
+	"images/penguin_4_color.png",
+	"images/penguin_4_front.png",
+	
+	"images/penguin_5_back.png",
+	"images/penguin_5_color.png",
+	"images/penguin_5_1_front.png",
+	"images/penguin_5_2_front.png",
+	"images/penguin_5_3_front.png",
+	
+	"images/penguin_6_1_back.png",
+	"images/penguin_6_2_back.png",
+	"images/penguin_6_1_color.png",
+	"images/penguin_6_2_color.png",
+	
+	"images/penguin_6_1_front.png",
+	"images/penguin_6_2_front.png",
+	"images/penguin_6_3_front.png",
+	"images/penguin_6_4_front.png",
+	"images/penguin_6_5_front.png",
+	"images/penguin_6_6_front.png",
+	
+	"images/penguin_7_back.png",
+	"images/penguin_7_color.png",
+	"images/penguin_7_front.png",
+	
+	"images/penguin_8_back.png",
+	"images/penguin_8_color.png",
+	"images/penguin_8_1_front.png",
+	"images/penguin_8_2_front.png",
+	"images/penguin_8_3_front.png"
+};
+
+enum {
+	PENGUIN_FRAME_1,
+	PENGUIN_FRAME_2,
+	PENGUIN_FRAME_3,
+	PENGUIN_FRAME_4,
+	PENGUIN_FRAME_5_1,
+	PENGUIN_FRAME_5_2,
+	PENGUIN_FRAME_5_3,
+	PENGUIN_FRAME_6_1,
+	PENGUIN_FRAME_6_2,
+	PENGUIN_FRAME_6_3,
+	PENGUIN_FRAME_6_4,
+	PENGUIN_FRAME_6_5,
+	PENGUIN_FRAME_6_6,
+	PENGUIN_FRAME_7,
+	PENGUIN_FRAME_8,
+	PENGUIN_FRAME_9,
+	PENGUIN_FRAME_10,
+	
+	NUM_PENGUIN_FRAMES
+};
+
+const SDL_Color penguin_colors[18] = {
+	{0, 51, 102},
+	{51, 51, 51},
+	{206, 0, 0},
+	{255, 204, 0},
+	{0, 153, 0},
+	{153, 102, 0},
+	{255, 49, 156},
+	{99, 0, 156},
+	{0, 156, 204},
+	{255, 102, 0},
+	{0, 102, 0},
+	{255, 99, 99},
+	{139, 227, 3},
+	{28, 150, 163},
+	{240, 240, 216},
+	{174, 159, 200},
+	{128, 33, 75},
+	{46, 71, 170}
+};
+
 /* Prototipos de función */
 int game_intro (void);
 int game_loop (void);
 int game_finish (void);
 void setup (void);
 SDL_Surface * set_video_mode(unsigned flags);
+void setup_and_color_penguin (void);
 
 /* Variables globales */
 SDL_Surface * screen;
 SDL_Surface * images[NUM_IMAGES];
+SDL_Surface * penguin_images[NUM_PENGUIN_FRAMES];
 int use_sound;
+
+int color_penguin = 0;
 
 Mix_Chunk * sounds[NUM_SOUNDS];
 Mix_Music * mus_carnie;
@@ -97,15 +256,16 @@ int main (int argc, char *argv[]) {
 	setup ();
 	bind_textdomain_codeset (PACKAGE, "UTF-8");
 	do {
-		if (game_intro () == GAME_QUIT) break;
+		//if (game_intro () == GAME_QUIT) break;
 		if (game_loop () == GAME_QUIT) break;
-		if (game_finish () == GAME_QUIT) break;
+		//if (game_finish () == GAME_QUIT) break;
 	} while (1 == 0);
 	
 	SDL_Quit ();
 	return EXIT_SUCCESS;
 }
 
+#if 0
 int game_intro (void) {
 	int done = 0;
 	SDL_Event event;
@@ -206,6 +366,7 @@ int game_finish (void) {
 	
 	return done;
 }
+#endif
 
 int game_loop (void) {
 	int done = 0;
@@ -213,10 +374,17 @@ int game_loop (void) {
 	SDLKey key;
 	Uint32 last_time, now_time;
 	SDL_Rect rect;
+	int penguinx, handposx;
+	
+	int bags = 0;
+	int penguin_frame = 0;
+	int i;
 	
 	/* Predibujar todo */
-	SDL_FillRect (screen, NULL, 0);
-	SDL_Flip (screen);
+	/*SDL_FillRect (screen, NULL, 0);
+	SDL_Flip (screen);*/
+	
+	SDL_EventState (SDL_MOUSEMOTION, SDL_IGNORE);
 	
 	do {
 		last_time = SDL_GetTicks ();
@@ -243,9 +411,69 @@ int game_loop (void) {
 					if (key == SDLK_ESCAPE) {
 						done = GAME_QUIT;
 					}
+					if (key == SDLK_a) {
+						if (bags < 9) {
+							bags++;
+							penguin_frame = 0;
+						}
+					} else if (key == SDLK_s) {
+						if (bags > 0) {
+							bags--;
+							penguin_frame = 0;
+						}
+					}
 					break;
 			}
 		}
+		
+		SDL_GetMouseState (&handposx, NULL);
+		
+		penguinx = handposx;
+		if (penguinx < 190) {
+			penguinx = 190;
+		} else if (penguinx > 555) {
+			penguinx = 555;
+		}
+		
+		SDL_BlitSurface (images[IMG_BACKGROUND], NULL, screen, NULL);
+		
+		if (bags >= 0 && bags < 4) {
+			i = PENGUIN_FRAME_1 + bags;
+		} else if (bags == 4) {
+			i = PENGUIN_FRAME_5_1 + (penguin_frame / 2);
+			penguin_frame++;
+			
+			if (penguin_frame >= 6) {
+				penguin_frame = 0;
+			}
+		} else if (bags == 5) {
+			i = PENGUIN_FRAME_6_1 + (penguin_frame / 2);
+			penguin_frame++;
+			
+			if (penguin_frame >= 12) {
+				penguin_frame = 0;
+			}
+		} else if (bags == 6) {
+			i = PENGUIN_FRAME_7;
+		} else if (bags > 6) {
+			i = PENGUIN_FRAME_8 + (bags - 7);
+		}
+		
+		/* Dibujar al pinguino */
+		rect.x = penguinx - 120;
+		rect.y = 251;
+		rect.w = penguin_images[i]->w;
+		rect.h = penguin_images[i]->h;
+		
+		SDL_BlitSurface (penguin_images[i], NULL, screen, &rect);
+		
+		/* Dibujar la plataforma */
+		rect.x = 0;
+		rect.y = 355;
+		rect.w = images[IMG_PLATAFORM]->w;
+		rect.h = images[IMG_PLATAFORM]->h;
+		
+		SDL_BlitSurface (images[IMG_PLATAFORM], NULL, screen, &rect);
 		
 		SDL_Flip (screen);
 		
@@ -269,9 +497,6 @@ SDL_Surface * set_video_mode (unsigned flags) {
 
 void setup (void) {
 	SDL_Surface * image;
-	TTF_Font *ttf10, *ttf14, *ttf16, *ttf26, *temp_font;
-	SDL_Color color;
-	SDL_Rect rect, rect2;
 	int g;
 	char buffer_file[8192];
 	char *systemdata_path = get_systemdata_path ();
@@ -338,8 +563,16 @@ void setup (void) {
 		/* TODO: Mostrar la carga de porcentaje */
 	}
 	
+	/* Generador de números aleatorios */
+	srand ((unsigned int) getpid ());
+	
+	/* Colorear y organizar las imágenes de pingüinos */
+	color_penguin = RANDOM (18);
+	
+	setup_and_color_penguin ();
+	
 	if (use_sound) {
-		for (g = 0; g < NUM_SOUNDS; g++) {
+		/*for (g = 0; g < NUM_SOUNDS; g++) {
 			sprintf (buffer_file, "%s%s", systemdata_path, sound_names[g]);
 			sounds[g] = Mix_LoadWAV (buffer_file);
 			
@@ -353,7 +586,7 @@ void setup (void) {
 				exit (1);
 			}
 			Mix_VolumeChunk (sounds[g], MIX_MAX_VOLUME / 2);
-		}
+		}*/
 		
 		/* Cargar la música */
 		//sprintf (buffer_file, "%s%s", systemdata_path, MUS_CARNIE);
@@ -380,8 +613,154 @@ void setup (void) {
 	
 	// TODO: Favor de manejar correctamente el bind_textdomain_codeset
 	//bind_textdomain_codeset (PACKAGE, "UTF-8");
+}
+
+void setup_and_color_penguin (void) {
+	int g;
+	SDL_Surface * image, *color_surface;
+	SDL_Surface *temp_penguins[NUM_PENGUIN_IMGS];
 	
-	/* Generador de números aleatorios */
-	srand (SDL_GetTicks ());
+	char buffer_file[8192];
+	char *systemdata_path = get_systemdata_path ();
+	
+	for (g = 0; g < NUM_PENGUIN_IMGS; g++) {
+		sprintf (buffer_file, "%s%s", systemdata_path, penguin_images_names[g]);
+		image = IMG_Load (buffer_file);
+		
+		if (image == NULL) {
+			fprintf (stderr,
+				_("Failed to load data file:\n"
+				"%s\n"
+				"The error returned by SDL is:\n"
+				"%s\n"), buffer_file, SDL_GetError());
+			SDL_Quit ();
+			exit (1);
+		}
+		
+		temp_penguins[g] = image;
+		/* TODO: Mostrar la carga de porcentaje */
+	}
+	
+	color_surface = SDL_CreateRGBSurface (SDL_SWSURFACE, 196, 199, 32, RMASK, GMASK, BMASK, AMASK);
+	SDL_FillRect (color_surface, NULL, SDL_MapRGB (color_surface->format, penguin_colors[color_penguin].r, penguin_colors[color_penguin].g, penguin_colors[color_penguin].b));
+	
+	for (g = 0; g < 4; g++) {
+		penguin_images[PENGUIN_FRAME_1 + g] = temp_penguins[IMG_PENGUIN_1_BACK + (g * 3)];
+		
+		/* Colorear el pingüino */
+		SDL_BlitSurface (color_surface, NULL, temp_penguins[IMG_PENGUIN_1_COLOR + (g * 3)], NULL);
+		
+		/* Copiar el color sobre el fondo */
+		SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_1_COLOR + (g * 3)], NULL, penguin_images[PENGUIN_FRAME_1 + g], NULL);
+		SDL_FreeSurface (temp_penguins[IMG_PENGUIN_1_COLOR + (g * 3)]);
+		temp_penguins[IMG_PENGUIN_1_COLOR + (g * 3)] = NULL;
+		
+		/* Copiar el frente */
+		SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_1_FRONT + (g * 3)], NULL, penguin_images[PENGUIN_FRAME_1 + g], NULL);
+		SDL_FreeSurface (temp_penguins[IMG_PENGUIN_1_FRONT + (g * 3)]);
+		temp_penguins[IMG_PENGUIN_1_FRONT + (g * 3)] = NULL;
+	}
+	
+	/* Duplicar el fondo del frame 5 */
+	penguin_images[PENGUIN_FRAME_5_1] = temp_penguins[IMG_PENGUIN_5_BACK];
+	penguin_images[PENGUIN_FRAME_5_2] = SDL_CreateRGBSurface (SDL_SWSURFACE, 196, 199, 32, RMASK, GMASK, BMASK, AMASK);
+	penguin_images[PENGUIN_FRAME_5_3] = SDL_CreateRGBSurface (SDL_SWSURFACE, 196, 199, 32, RMASK, GMASK, BMASK, AMASK);
+	
+	SDL_SetAlpha (penguin_images[PENGUIN_FRAME_5_1], 0, 0);
+	SDL_BlitSurface (penguin_images[PENGUIN_FRAME_5_1], NULL, penguin_images[PENGUIN_FRAME_5_2], NULL);
+	SDL_BlitSurface (penguin_images[PENGUIN_FRAME_5_1], NULL, penguin_images[PENGUIN_FRAME_5_3], NULL);
+	SDL_SetAlpha (penguin_images[PENGUIN_FRAME_5_1], SDL_SRCALPHA, SDL_ALPHA_OPAQUE);
+	
+	/* Colorear el pingüino */
+	SDL_BlitSurface (color_surface, NULL, temp_penguins[IMG_PENGUIN_5_COLOR], NULL);
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_5_COLOR], NULL, penguin_images[PENGUIN_FRAME_5_1], NULL);
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_5_COLOR], NULL, penguin_images[PENGUIN_FRAME_5_2], NULL);
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_5_COLOR], NULL, penguin_images[PENGUIN_FRAME_5_3], NULL);
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_5_COLOR]);
+	temp_penguins[IMG_PENGUIN_5_COLOR] = NULL;
+	
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_5_1_FRONT], NULL, penguin_images[PENGUIN_FRAME_5_1], NULL);
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_5_2_FRONT], NULL, penguin_images[PENGUIN_FRAME_5_2], NULL);
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_5_3_FRONT], NULL, penguin_images[PENGUIN_FRAME_5_3], NULL);
+	
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_5_1_FRONT]);
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_5_2_FRONT]);
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_5_3_FRONT]);
+	
+	temp_penguins[IMG_PENGUIN_5_1_FRONT] = temp_penguins[IMG_PENGUIN_5_2_FRONT] = temp_penguins[IMG_PENGUIN_5_3_FRONT] = NULL;
+	
+	/* Vamos por el frame 6 */
+	SDL_SetAlpha (temp_penguins[IMG_PENGUIN_6_1_BACK], 0, 0);
+	SDL_SetAlpha (temp_penguins[IMG_PENGUIN_6_2_BACK], 0, 0);
+	
+	SDL_BlitSurface (color_surface, NULL, temp_penguins[IMG_PENGUIN_6_1_COLOR], NULL);
+	SDL_BlitSurface (color_surface, NULL, temp_penguins[IMG_PENGUIN_6_2_COLOR], NULL);
+	
+	/* 6 frames de animación del frame 6 */
+	for (g = 0; g < 6; g++) {
+		penguin_images[PENGUIN_FRAME_6_1 + g] = SDL_CreateRGBSurface (SDL_SWSURFACE, 196, 199, 32, RMASK, GMASK, BMASK, AMASK);
+		
+		/* Clonar el fondo */
+		SDL_BlitSurface (temp_penguins[IMG_PENGUIN_6_1_BACK + (g % 2)], NULL, penguin_images[PENGUIN_FRAME_6_1 + g], NULL);
+		
+		SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_6_1_COLOR + (g % 2)], NULL, penguin_images[PENGUIN_FRAME_6_1 + g], NULL);
+		
+		SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_6_1_FRONT + g], NULL, penguin_images[PENGUIN_FRAME_6_1 + g], NULL);
+		
+		SDL_FreeSurface (temp_penguins[IMG_PENGUIN_6_1_FRONT + g]);
+		temp_penguins[IMG_PENGUIN_6_1_FRONT + g] = NULL;
+	}
+	
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_6_1_BACK]);
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_6_2_BACK]);
+	temp_penguins[IMG_PENGUIN_6_1_BACK] = temp_penguins[IMG_PENGUIN_6_2_BACK] = NULL;
+	
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_6_1_COLOR]);
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_6_2_COLOR]);
+	temp_penguins[IMG_PENGUIN_6_1_COLOR] = temp_penguins[IMG_PENGUIN_6_2_COLOR] = NULL;
+	
+	/* Armar el frame 7 */
+	penguin_images[PENGUIN_FRAME_7] = temp_penguins[IMG_PENGUIN_7_BACK];
+	
+	/* Colorear el pingüino */
+	SDL_BlitSurface (color_surface, NULL, temp_penguins[IMG_PENGUIN_7_COLOR], NULL);
+	
+	/* Copiar el color sobre el fondo */
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_7_COLOR], NULL, penguin_images[PENGUIN_FRAME_7], NULL);
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_7_COLOR]);
+	temp_penguins[IMG_PENGUIN_7_COLOR] = NULL;
+	
+	/* Copiar el frente */
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_7_FRONT], NULL, penguin_images[PENGUIN_FRAME_7], NULL);
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_7_FRONT]);
+	temp_penguins[IMG_PENGUIN_7_FRONT] = NULL;
+	
+	/* Generar los otros 3 estados */
+	penguin_images[PENGUIN_FRAME_8] = temp_penguins[IMG_PENGUIN_8_BACK];
+	penguin_images[PENGUIN_FRAME_9] = SDL_CreateRGBSurface (SDL_SWSURFACE, 196, 199, 32, RMASK, GMASK, BMASK, AMASK);
+	penguin_images[PENGUIN_FRAME_10] = SDL_CreateRGBSurface (SDL_SWSURFACE, 196, 199, 32, RMASK, GMASK, BMASK, AMASK);
+	
+	SDL_SetAlpha (penguin_images[PENGUIN_FRAME_8], 0, 0);
+	SDL_BlitSurface (penguin_images[PENGUIN_FRAME_8], NULL, penguin_images[PENGUIN_FRAME_9], NULL);
+	SDL_BlitSurface (penguin_images[PENGUIN_FRAME_8], NULL, penguin_images[PENGUIN_FRAME_10], NULL);
+	SDL_SetAlpha (penguin_images[PENGUIN_FRAME_8], SDL_SRCALPHA, SDL_ALPHA_OPAQUE);
+	
+	/* Colorear el pingüino */
+	SDL_BlitSurface (color_surface, NULL, temp_penguins[IMG_PENGUIN_8_COLOR], NULL);
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_8_COLOR], NULL, penguin_images[PENGUIN_FRAME_8], NULL);
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_8_COLOR], NULL, penguin_images[PENGUIN_FRAME_9], NULL);
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_8_COLOR], NULL, penguin_images[PENGUIN_FRAME_10], NULL);
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_8_COLOR]);
+	temp_penguins[IMG_PENGUIN_8_COLOR] = NULL;
+	
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_8_1_FRONT], NULL, penguin_images[PENGUIN_FRAME_8], NULL);
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_8_2_FRONT], NULL, penguin_images[PENGUIN_FRAME_9], NULL);
+	SDL_gfxBlitRGBA (temp_penguins[IMG_PENGUIN_8_3_FRONT], NULL, penguin_images[PENGUIN_FRAME_10], NULL);
+	
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_8_1_FRONT]);
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_8_2_FRONT]);
+	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_8_3_FRONT]);
+	
+	temp_penguins[IMG_PENGUIN_8_1_FRONT] = temp_penguins[IMG_PENGUIN_8_2_FRONT] = temp_penguins[IMG_PENGUIN_8_3_FRONT] = NULL;
 }
 

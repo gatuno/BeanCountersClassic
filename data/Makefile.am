@@ -1,6 +1,42 @@
 gamedatadir = $(pkgdatadir)/data
 
-nobase_dist_gamedata_DATA = 
+nobase_dist_gamedata_DATA = images/background.png \
+	images/penguin_1_back.png \
+	images/penguin_1_color.png \
+	images/penguin_1_front.png \
+	images/penguin_2_back.png \
+	images/penguin_2_color.png \
+	images/penguin_2_front.png \
+	images/penguin_3_back.png \
+	images/penguin_3_color.png \
+	images/penguin_3_front.png \
+	images/penguin_4_back.png \
+	images/penguin_4_color.png \
+	images/penguin_4_front.png \
+	images/penguin_5_1_front.png \
+	images/penguin_5_2_front.png \
+	images/penguin_5_3_front.png \
+	images/penguin_5_back.png \
+	images/penguin_5_color.png \
+	images/penguin_6_1_back.png \
+	images/penguin_6_1_color.png \
+	images/penguin_6_1_front.png \
+	images/penguin_6_2_back.png \
+	images/penguin_6_2_color.png \
+	images/penguin_6_2_front.png \
+	images/penguin_6_3_front.png \
+	images/penguin_6_4_front.png \
+	images/penguin_6_5_front.png \
+	images/penguin_6_6_front.png \
+	images/penguin_7_back.png \
+	images/penguin_7_color.png \
+	images/penguin_7_front.png \
+	images/penguin_8_1_front.png \
+	images/penguin_8_2_front.png \
+	images/penguin_8_3_front.png \
+	images/penguin_8_back.png \
+	images/penguin_8_color.png \
+	images/plataform.png
 
 # Instalar los archivos .desktop e iconos
 applicationsdir = $(datadir)/applications
