@@ -36,7 +36,11 @@ nobase_dist_gamedata_DATA = images/background.png \
 	images/penguin_8_3_front.png \
 	images/penguin_8_back.png \
 	images/penguin_8_color.png \
-	images/plataform.png
+	images/plataform.png \
+	images/bag_1.png \
+	images/bag_2.png \
+	images/bag_3.png \
+	images/bag_4.png
 
 # Instalar los archivos .desktop e iconos
 applicationsdir = $(datadir)/applications

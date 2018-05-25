@@ -55,10 +55,26 @@
 #define AMASK 0xff000000
 #endif
 
+typedef struct _BeanBag {
+	int bag;
+	int throw_length;
+	int frame;
+	
+	const int (*bag_points)[3];
+	
+	struct _BeanBag *prev;
+	struct _BeanBag *next;
+} BeanBag;
+
 /* Enumerar las imágenes */
 enum {
 	IMG_BACKGROUND,
 	IMG_PLATAFORM,
+	
+	IMG_BAG_1,
+	IMG_BAG_2,
+	IMG_BAG_3,
+	IMG_BAG_4,
 	
 	NUM_IMAGES
 };
@@ -66,7 +82,12 @@ enum {
 /* Los nombres de archivos */
 const char *images_names[NUM_IMAGES] = {
 	"images/background.png",
-	"images/plataform.png"
+	"images/plataform.png",
+	
+	"images/bag_1.png",
+	"images/bag_2.png",
+	"images/bag_3.png",
+	"images/bag_4.png"
 };
 
 enum {
@@ -224,6 +245,132 @@ const SDL_Color penguin_colors[18] = {
 	{46, 71, 170}
 };
 
+const int bag_0_points[31][3] = {
+	{0, 638, 108},
+	{0, 613, 98},
+	{0, 588, 87},
+	{0, 565, 80},
+	{0, 543, 72},
+	{0, 523, 68},
+	{0, 504, 65},
+	{0, 485, 61},
+	{1, 493, 28},
+	{1, 479, 27},
+	{1, 465, 27},
+	{1, 456, 28},
+	{2, 427, 43},
+	{2, 413, 46},
+	{2, 400, 49},
+	{2, 387, 51},
+	{2, 371, 59},
+	{2, 355, 66},
+	{2, 338, 73},
+	{2, 322, 88},
+	{2, 305, 102},
+	{2, 288, 117},
+	{2, 274, 139},
+	{2, 259, 161},
+	{2, 245, 183},
+	{2, 234, 211},
+	{2, 223, 239},
+	{2, 212, 268},
+	{2, 204, 300},
+	{2, 196, 333},
+	{3, 165, 408}
+};
+
+const int bag_1_points[22][3] = {
+	{0, 633, 209},
+	{0, 622, 168},
+	{0, 610, 134},
+	{0, 598, 107},
+	{0, 586, 87},
+	{0, 574, 74},
+	{0, 563, 69},
+	{0, 558, 68},
+	{1, 579, 38},
+	{1, 571, 42},
+	{1, 563, 51},
+	{1, 554, 65},
+	{2, 527, 141},
+	{2, 520, 164},
+	{2, 512, 187},
+	{2, 505, 215},
+	{2, 498, 246},
+	{2, 491, 280},
+	{2, 484, 317},
+	{2, 478, 358},
+	{2, 472, 402},
+	{3, 441, 420}
+};
+
+const int bag_2_points[28][3] = {
+	{0, 633, 229},
+	{0, 620, 202},
+	{0, 606, 175},
+	{0, 593, 154},
+	{0, 579, 132},
+	{0, 565, 116},
+	{0, 550, 100},
+	{0, 536, 89},
+	{1, 548, 49},
+	{1, 535, 46},
+	{1, 523, 43},
+	{1, 510, 39},
+	{2, 477, 99},
+	{2, 461, 104},
+	{2, 444, 114},
+	{2, 427, 126},
+	{2, 413, 140},
+	{2, 399, 160},
+	{2, 385, 179},
+	{2, 370, 199},
+	{2, 357, 224},
+	{2, 344, 249},
+	{2, 331, 273},
+	{2, 319, 304},
+	{2, 307, 335},
+	{2, 294, 365},
+	{2, 282, 396},
+	{3, 251, 405}
+};
+
+const int bag_3_points[33][3] = {
+	{0, 647, 305},
+	{0, 620, 267},
+	{0, 595, 236},
+	{0, 570, 204},
+	{0, 546, 179},
+	{0, 522, 153},
+	{0, 499, 135},
+	{0, 477, 116},
+	{1, 481, 71},
+	{1, 463, 63},
+	{1, 444, 54},
+	{1, 429, 50},
+	{2, 397, 106},
+	{2, 389, 107},
+	{2, 381, 108},
+	{2, 373, 109},
+	{2, 365, 110},
+	{2, 354, 114},
+	{2, 343, 117},
+	{2, 330, 125},
+	{2, 316, 132},
+	{2, 302, 145},
+	{2, 288, 158},
+	{2, 275, 176},
+	{2, 261, 194},
+	{2, 249, 217},
+	{2, 237, 240},
+	{2, 227, 267},
+	{2, 217, 294},
+	{2, 208, 326},
+	{2, 198, 358},
+	{2, 189, 389},
+	{3, 141, 422}
+};
+
 /* Prototipos de función */
 int game_intro (void);
 int game_loop (void);
@@ -231,6 +378,7 @@ int game_finish (void);
 void setup (void);
 SDL_Surface * set_video_mode(unsigned flags);
 void setup_and_color_penguin (void);
+void add_bag (int tipo);
 
 /* Variables globales */
 SDL_Surface * screen;
@@ -242,6 +390,9 @@ int color_penguin = 0;
 
 Mix_Chunk * sounds[NUM_SOUNDS];
 Mix_Music * mus_carnie;
+
+BeanBag *first_bag = NULL;
+BeanBag *last_bag = NULL;
 
 int main (int argc, char *argv[]) {
 	/* Recuperar las rutas del sistema */
@@ -375,6 +526,7 @@ int game_loop (void) {
 	Uint32 last_time, now_time;
 	SDL_Rect rect;
 	int penguinx, handposx;
+	BeanBag *thisbag;
 	
 	int bags = 0;
 	int penguin_frame = 0;
@@ -421,6 +573,14 @@ int game_loop (void) {
 							bags--;
 							penguin_frame = 0;
 						}
+					} else if (key == SDLK_q) {
+						add_bag (0);
+					} else if (key == SDLK_w) {
+						add_bag (1);
+					} else if (key == SDLK_e) {
+						add_bag (2);
+					} else if (key == SDLK_r) {
+						add_bag (3);
 					}
 					break;
 			}
@@ -433,6 +593,14 @@ int game_loop (void) {
 			penguinx = 190;
 		} else if (penguinx > 555) {
 			penguinx = 555;
+		}
+		
+		/* Procesar las bolsas */
+		thisbag = first_bag;
+		while (thisbag != NULL) {
+			thisbag->frame++;
+			
+			thisbag = thisbag->next;
 		}
 		
 		SDL_BlitSurface (images[IMG_BACKGROUND], NULL, screen, NULL);
@@ -475,6 +643,29 @@ int game_loop (void) {
 		
 		SDL_BlitSurface (images[IMG_PLATAFORM], NULL, screen, &rect);
 		
+		/* Dibujar las bolsas de café, arriba de la plataforma, por detrás del camión */
+		thisbag = first_bag;
+		while (thisbag != NULL) {
+			if (thisbag->frame < thisbag->throw_length) {
+				/* Dibujar la bolsa */
+				i = IMG_BAG_1 + thisbag->bag_points[thisbag->frame][0];
+				rect.x = thisbag->bag_points[thisbag->frame][1];
+				rect.y = thisbag->bag_points[thisbag->frame][2];
+			} else {
+				i = IMG_BAG_4;
+				rect.x = thisbag->bag_points[thisbag->throw_length][1];
+				rect.y = thisbag->bag_points[thisbag->throw_length][2];
+			}
+			
+			rect.w = images[i]->w;
+			rect.h = images[i]->h;
+			
+			SDL_BlitSurface (images[i], NULL, screen, &rect);
+			
+			thisbag = thisbag->next;
+		}
+		
+		/* TODO: Dibujar aquí el camión */
 		SDL_Flip (screen);
 		
 		now_time = SDL_GetTicks ();
@@ -762,5 +953,39 @@ void setup_and_color_penguin (void) {
 	SDL_FreeSurface (temp_penguins[IMG_PENGUIN_8_3_FRONT]);
 	
 	temp_penguins[IMG_PENGUIN_8_1_FRONT] = temp_penguins[IMG_PENGUIN_8_2_FRONT] = temp_penguins[IMG_PENGUIN_8_3_FRONT] = NULL;
+}
+
+void add_bag (int tipo) {
+	BeanBag *new;
+	
+	new = (BeanBag *) malloc (sizeof (BeanBag));
+	
+	new->bag = tipo;
+	new->frame = -1;
+	
+	if (tipo == 0) {
+		new->throw_length = 30;
+		new->bag_points = bag_0_points;
+	} else if (tipo == 1) {
+		new->throw_length = 21;
+		new->bag_points = bag_1_points;
+	} else if (tipo == 2) {
+		new->throw_length = 27;
+		new->bag_points = bag_2_points;
+	} else if (tipo == 3) {
+		new->throw_length = 32;
+		new->bag_points = bag_3_points;
+	}
+	
+	/* Ahora sus campos para lista doble ligada */
+	new->next = NULL;
+	new->prev = last_bag;
+	
+	if (last_bag == NULL) {
+		first_bag = last_bag = new;
+	} else {
+		last_bag->next = new;
+		last_bag = new;
+	}
 }
 
