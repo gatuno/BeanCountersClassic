@@ -41,6 +41,13 @@ b = ((pixel&fmt->Bmask)>>fmt->Bshift)<<fmt->Bloss; 		\
 a = ((pixel&fmt->Amask)>>fmt->Ashift)<<fmt->Aloss;	 	\
 }
 
+#define RGB_FROM_PIXEL(Pixel, fmt, r, g, b)				\
+{									\
+	r = (((Pixel&fmt->Rmask)>>fmt->Rshift)<<fmt->Rloss); 		\
+	g = (((Pixel&fmt->Gmask)>>fmt->Gshift)<<fmt->Gloss); 		\
+	b = (((Pixel&fmt->Bmask)>>fmt->Bshift)<<fmt->Bloss); 		\
+}
+
 /*!
 \brief Disassemble buffer pointer into a pixel and separate RGBA values.
 */
@@ -49,6 +56,34 @@ do {									   \
 pixel = *((Uint32 *)(buf));			   		   \
 GFX_RGBA_FROM_PIXEL(pixel, fmt, r, g, b, a);			   \
 pixel &= ~fmt->Amask;						   \
+} while(0)
+
+#define GFX_DISEMBLE_RGB(buf, bpp, fmt, Pixel, r, g, b)			   \
+do {									   \
+	switch (bpp) {							   \
+		case 2:							   \
+			Pixel = *((Uint16 *)(buf));			   \
+		break;							   \
+									   \
+		case 3: {						   \
+		        Uint8 *B = (Uint8 *)buf;			   \
+			if(SDL_BYTEORDER == SDL_LIL_ENDIAN) {		   \
+			        Pixel = B[0] + (B[1] << 8) + (B[2] << 16); \
+			} else {					   \
+			        Pixel = (B[0] << 16) + (B[1] << 8) + B[2]; \
+			}						   \
+		}							   \
+		break;							   \
+									   \
+		case 4:							   \
+			Pixel = *((Uint32 *)(buf));			   \
+		break;							   \
+									   \
+	        default:						   \
+		        Pixel = 0;	/* prevent gcc from complaining */ \
+		break;							   \
+	}								   \
+	RGB_FROM_PIXEL(Pixel, fmt, r, g, b);				   \
 } while(0)
 
 /*!
@@ -67,10 +102,36 @@ pixel = ((r>>fmt->Rloss)<<fmt->Rshift)|				\
 */
 #define GFX_ASSEMBLE_RGBA(buf, bpp, fmt, r, g, b, a)			\
 {									\
-Uint32 pixel;					\
-\
-GFX_PIXEL_FROM_RGBA(pixel, fmt, r, g, b, a);	\
-*((Uint32 *)(buf)) = pixel;			\
+	switch (bpp) {							\
+		case 2: {						\
+			Uint16 Pixel;					\
+									\
+			GFX_PIXEL_FROM_RGBA(Pixel, fmt, r, g, b, a);	\
+			*((Uint16 *)(buf)) = Pixel;			\
+		}							\
+		break;							\
+									\
+		case 3: { /* FIXME: broken code (no alpha) */		\
+                        if(SDL_BYTEORDER == SDL_LIL_ENDIAN) {		\
+			        *((buf)+fmt->Rshift/8) = r;		\
+				*((buf)+fmt->Gshift/8) = g;		\
+				*((buf)+fmt->Bshift/8) = b;		\
+			} else {					\
+			        *((buf)+2-fmt->Rshift/8) = r;		\
+				*((buf)+2-fmt->Gshift/8) = g;		\
+				*((buf)+2-fmt->Bshift/8) = b;		\
+			}						\
+		}							\
+		break;							\
+									\
+		case 4: {						\
+			Uint32 Pixel;					\
+									\
+			GFX_PIXEL_FROM_RGBA(Pixel, fmt, r, g, b, a);	\
+			*((Uint32 *)(buf)) = Pixel;			\
+		}							\
+		break;							\
+	}								\
 }
 
 /*!
@@ -82,18 +143,6 @@ dR = (((sR-dR)*(A))/255)+dR;		\
 dG = (((sG-dG)*(A))/255)+dG;		\
 dB = (((sB-dB)*(A))/255)+dB;		\
 } while(0)
-
-#define PERFECT_ALPHA_BLEND(sR, sG, sB, sA, dR, dG, dB, dA) \
-do { \
-	dR = ((sR * sA) + (dR * dA * (255 - sA))); \
-	dG = ((sG * sA) + (dG * dA * (255 - sA))); \
-	dB = ((sB * sA) + (dB * dA * (255 - sA))); \
-	dA = (sA + (dA * (255 - sA))); \
-	dR = dR / dA; \
-	dG = dG / dA; \
-	dB = dB / dA; \
-	dA = (dA / 255); \
-} while (0)
 
 /*!
 \brief 4-times unrolled DUFFs loop.
@@ -124,6 +173,7 @@ typedef struct {
 	SDL_PixelFormat *src;
 	Uint8    *table;
 	SDL_PixelFormat *dst;
+	Uint8 alpha;
 } SDL_gfxBlitInfo;
 
 /*!  
@@ -602,6 +652,209 @@ int SDL_gfxBlitRGBA(SDL_Surface * src, SDL_Rect * srcrect, SDL_Surface * dst, SD
 		sr.w = dr.w = w;
 		sr.h = dr.h = h;
 		return (_SDL_gfxBlitRGBACall(src, &sr, dst, &dr));
+	}
+
+	return 0;
+}
+
+/* Funciones escritas por Gatuno para hacer Blit con superficies transparentes más un alpha general */
+/* General (slow) N->N blending with per-surface alpha */
+static void _SDL_gfxBlitBlitterRGBAWithAlpha(SDL_gfxBlitInfo *info)
+{
+	int width = info->d_width;
+	int height = info->d_height;
+	Uint8 *src = info->s_pixels;
+	int srcskip = info->s_skip;
+	Uint8 *dst = info->d_pixels;
+	int dstskip = info->d_skip;
+	SDL_PixelFormat *srcfmt = info->src;
+	SDL_PixelFormat *dstfmt = info->dst;
+	int srcbpp = srcfmt->BytesPerPixel;
+	int dstbpp = dstfmt->BytesPerPixel;
+	unsigned sAlpha = info->alpha;
+	unsigned dA = dstfmt->Amask ? SDL_ALPHA_OPAQUE : 0;
+
+	if(sAlpha) {
+	  while ( height-- ) {
+	    GFX_DUFFS_LOOP4( {
+		Uint32 Pixel;
+		unsigned sR;
+		unsigned sG;
+		unsigned sB;
+		unsigned dR;
+		unsigned dG;
+		unsigned dB;
+		unsigned sA;
+		
+		GFX_DISASSEMBLE_RGBA(src, srcbpp, srcfmt, Pixel, sR, sG, sB, sA);
+		GFX_DISEMBLE_RGB(dst, dstbpp, dstfmt, Pixel, dR, dG, dB);
+		sA = sA * sAlpha / 255;
+		GFX_ALPHA_BLEND(sR, sG, sB, sA, dR, dG, dB);
+		GFX_ASSEMBLE_RGBA(dst, dstbpp, dstfmt, dR, dG, dB, dA);
+		src += srcbpp;
+		dst += dstbpp;
+	    },
+	    width);
+	    src += srcskip;
+	    dst += dstskip;
+	  }
+	}
+}
+
+int _SDL_gfxBlitRGBACallWithAlpha(SDL_Surface * src, SDL_Rect * srcrect, SDL_Surface * dst, SDL_Rect * dstrect, Uint8 alpha)
+{
+	/*
+	* Set up source and destination buffer pointers, then blit 
+	*/
+	if (srcrect->w && srcrect->h) {
+		SDL_gfxBlitInfo info;
+
+		/*
+		* Set up the blit information 
+		*/
+#if (SDL_MINOR_VERSION == 3)
+		info.s_pixels = (Uint8 *) src->pixels               + (Uint16) srcrect->y * src->pitch + (Uint16) srcrect->x * src->format->BytesPerPixel;
+#else
+		info.s_pixels = (Uint8 *) src->pixels + src->offset + (Uint16) srcrect->y * src->pitch + (Uint16) srcrect->x * src->format->BytesPerPixel;
+#endif
+		info.s_width = srcrect->w;
+		info.s_height = srcrect->h;
+		info.s_skip = (int)(src->pitch - info.s_width * src->format->BytesPerPixel);
+#if (SDL_MINOR_VERSION == 3)
+		info.d_pixels = (Uint8 *) dst->pixels               + (Uint16) dstrect->y * dst->pitch + (Uint16) dstrect->x * dst->format->BytesPerPixel;
+#else
+		info.d_pixels = (Uint8 *) dst->pixels + dst->offset + (Uint16) dstrect->y * dst->pitch + (Uint16) dstrect->x * dst->format->BytesPerPixel;
+#endif
+		info.d_width = dstrect->w;
+		info.d_height = dstrect->h;
+		info.d_skip = (int)(dst->pitch - info.d_width * dst->format->BytesPerPixel);
+		info.aux_data = NULL;
+		info.src = src->format;
+		info.table = NULL;
+		info.dst = dst->format;
+		info.alpha = alpha;
+		/*
+		* Run the actual software blitter 
+		*/
+		_SDL_gfxBlitBlitterRGBAWithAlpha(&info);
+		return 1;
+	}
+
+	return (0);
+}
+
+/*!
+\brief Blitter for RGBA->RGBA blits with alpha per surface.
+
+Verifies the input 'src' and 'dst' surfaces and rectangles and performs blit.
+The destination clip rectangle is honored.
+
+\param src The source surface.
+\param srcrect The source rectangle.
+\param dst The destination surface.
+\param dstrect The destination rectangle.
+
+\returns Returns 1 if blit was performed, 0 otherwise, or -1 if an error occured.
+*/
+int SDL_gfxBlitRGBAWithAlpha(SDL_Surface * src, SDL_Rect * srcrect, SDL_Surface * dst, SDL_Rect * dstrect, Uint8 alpha)
+{
+	SDL_Rect  sr, dr;
+	int       srcx, srcy, w, h;
+
+	/*
+	* Make sure the surfaces aren't locked 
+	*/
+	if (!src || !dst) {
+		SDL_SetError("SDL_UpperBlit: passed a NULL surface");
+		return (-1);
+	}
+	if ((src->locked) || (dst->locked)) {
+		SDL_SetError("Surfaces must not be locked during blit");
+		return (-1);
+	}
+	
+	if (alpha == 0) {
+		return 0;
+	}
+	/*
+	* If the destination rectangle is NULL, use the entire dest surface 
+	*/
+	if (dstrect == NULL) {
+		dr.x = dr.y = 0;
+		dr.w = dst->w;
+		dr.h = dst->h;
+	} else {
+		dr = *dstrect;
+	}
+
+	/*
+	* Clip the source rectangle to the source surface 
+	*/
+	if (srcrect) {
+		int       maxw, maxh;
+
+		srcx = srcrect->x;
+		w = srcrect->w;
+		if (srcx < 0) {
+			w += srcx;
+			dr.x -= srcx;
+			srcx = 0;
+		}
+		maxw = src->w - srcx;
+		if (maxw < w)
+			w = maxw;
+
+		srcy = srcrect->y;
+		h = srcrect->h;
+		if (srcy < 0) {
+			h += srcy;
+			dr.y -= srcy;
+			srcy = 0;
+		}
+		maxh = src->h - srcy;
+		if (maxh < h)
+			h = maxh;
+
+	} else {
+		srcx = srcy = 0;
+		w = src->w;
+		h = src->h;
+	}
+
+	/*
+	* Clip the destination rectangle against the clip rectangle 
+	*/
+	{
+		SDL_Rect *clip = &dst->clip_rect;
+		int       dx, dy;
+
+		dx = clip->x - dr.x;
+		if (dx > 0) {
+			w -= dx;
+			dr.x += dx;
+			srcx += dx;
+		}
+		dx = dr.x + w - clip->x - clip->w;
+		if (dx > 0)
+			w -= dx;
+
+		dy = clip->y - dr.y;
+		if (dy > 0) {
+			h -= dy;
+			dr.y += dy;
+			srcy += dy;
+		}
+		dy = dr.y + h - clip->y - clip->h;
+		if (dy > 0)
+			h -= dy;
+	}
+
+	if (w > 0 && h > 0) {
+		sr.x = srcx;
+		sr.y = srcy;
+		sr.w = dr.w = w;
+		sr.h = dr.h = h;
+		return (_SDL_gfxBlitRGBACallWithAlpha(src, &sr, dst, &dr, alpha));
 	}
 
 	return 0;

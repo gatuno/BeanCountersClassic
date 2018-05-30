@@ -379,6 +379,7 @@ void setup (void);
 SDL_Surface * set_video_mode(unsigned flags);
 void setup_and_color_penguin (void);
 void add_bag (int tipo);
+void delete_bag (BeanBag *p);
 
 /* Variables globales */
 SDL_Surface * screen;
@@ -526,11 +527,11 @@ int game_loop (void) {
 	Uint32 last_time, now_time;
 	SDL_Rect rect;
 	int penguinx, handposx;
-	BeanBag *thisbag;
+	BeanBag *thisbag, *nextbag;
 	
 	int bags = 0;
 	int penguin_frame = 0;
-	int i;
+	int i, j;
 	
 	/* Predibujar todo */
 	/*SDL_FillRect (screen, NULL, 0);
@@ -598,9 +599,17 @@ int game_loop (void) {
 		/* Procesar las bolsas */
 		thisbag = first_bag;
 		while (thisbag != NULL) {
+			nextbag = thisbag->next;
+			
 			thisbag->frame++;
 			
-			thisbag = thisbag->next;
+			j = thisbag->frame - thisbag->throw_length;
+			if (j >= 35) {
+				/* Eliminar esta bolsa */
+				delete_bag (thisbag);
+			}
+			
+			thisbag = nextbag;
 		}
 		
 		SDL_BlitSurface (images[IMG_BACKGROUND], NULL, screen, NULL);
@@ -655,12 +664,17 @@ int game_loop (void) {
 				i = IMG_BAG_4;
 				rect.x = thisbag->bag_points[thisbag->throw_length][1];
 				rect.y = thisbag->bag_points[thisbag->throw_length][2];
+				j = thisbag->frame - thisbag->throw_length;
 			}
 			
 			rect.w = images[i]->w;
 			rect.h = images[i]->h;
 			
-			SDL_BlitSurface (images[i], NULL, screen, &rect);
+			if (i == IMG_BAG_4 && j > 25) {
+				SDL_gfxBlitRGBAWithAlpha (images[i], NULL, screen, &rect, 255 - SDL_ALPHA_OPAQUE * (j - 25) / 10);
+			} else {
+				SDL_BlitSurface (images[i], NULL, screen, &rect);
+			}
 			
 			thisbag = thisbag->next;
 		}
@@ -989,3 +1003,20 @@ void add_bag (int tipo) {
 	}
 }
 
+void delete_bag (BeanBag *p) {
+	if (p == NULL) return;
+	
+	if (p->prev == NULL) { /* El primero de la lista */
+		first_bag = p->next;
+	} else {
+		p->prev->next = p->next;
+	}
+	
+	if (p->next == NULL) {
+		last_bag = p->prev;
+	} else {
+		p->next->prev = p->prev;
+	}
+	
+	free (p);
+}

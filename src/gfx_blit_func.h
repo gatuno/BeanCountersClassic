@@ -24,6 +24,7 @@
 #define __GFX_BLIT_FUNC_H__
 
 int SDL_gfxBlitRGBA(SDL_Surface * src, SDL_Rect * srcrect, SDL_Surface * dst, SDL_Rect * dstrect);
+int SDL_gfxBlitRGBAWithAlpha(SDL_Surface * src, SDL_Rect * srcrect, SDL_Surface * dst, SDL_Rect * dstrect, Uint8 alpha);
 
 #endif /* __GFX_BLIT_FUNC_H__ */
 
