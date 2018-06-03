@@ -120,6 +120,7 @@ AC_CONFIG_FILES([ po/Makefile.in
                  data/Makefile
                  etc/Makefile
                  etc/Info.plist
+                 data/collider/Makefile
 ])
 
 AC_OUTPUT

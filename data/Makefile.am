@@ -77,3 +77,5 @@ EXTRA_DIST = \
 	desktop/128x128/coffee_bag.png		\
 	desktop/256x256/coffee_bag.png		\
 	coffee_bag.ico
+
+SUBDIRS = collider
