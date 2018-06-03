@@ -28,6 +28,9 @@
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
 
+#include <sys/types.h>
+#include <unistd.h>
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -42,6 +45,7 @@
 
 #define FPS (1000/24)
 #define RANDOM(x) ((int) (x ## .0 * rand () / (RAND_MAX + 1.0)))
+#define RANDOM_VAR(x) ((int) (((float) x) * rand () / (RAND_MAX + 1.0)))
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 #define RMASK 0xff000000
@@ -533,6 +537,10 @@ int game_loop (void) {
 	int penguin_frame = 0;
 	int i, j;
 	
+	int level, activator;
+	int bag_activity = 15;
+	int airbone, max_airbone = 1;
+	
 	/* Predibujar todo */
 	/*SDL_FillRect (screen, NULL, 0);
 	SDL_Flip (screen);*/
@@ -587,13 +595,28 @@ int game_loop (void) {
 			}
 		}
 		
-		SDL_GetMouseState (&handposx, NULL);
+		if (bags < 6) {
+			SDL_GetMouseState (&handposx, NULL);
 		
-		penguinx = handposx;
-		if (penguinx < 190) {
-			penguinx = 190;
-		} else if (penguinx > 555) {
-			penguinx = 555;
+			penguinx = handposx;
+			if (penguinx < 190) {
+				penguinx = 190;
+			} else if (penguinx > 555) {
+				penguinx = 555;
+			}
+		}
+		
+		activator = RANDOM_VAR (bag_activity);
+		
+		if (activator <= 2 && bags < 6 /* AND Game Over not visible */) {
+			if (airbone < max_airbone) {
+				i = RANDOM (8);
+				
+				if (i <= 3) {
+					add_bag (i);
+					airbone++;
+				}
+			}
 		}
 		
 		/* Procesar las bolsas */
@@ -604,6 +627,14 @@ int game_loop (void) {
 			thisbag->frame++;
 			
 			j = thisbag->frame - thisbag->throw_length;
+			
+			/* Calcular aquí la colisión contra el pingüino */
+			
+			if (j == 0) {
+				/* Eliminar del airbone */
+				airbone--;
+			}
+			
 			if (j >= 35) {
 				/* Eliminar esta bolsa */
 				delete_bag (thisbag);

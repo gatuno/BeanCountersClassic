@@ -5,7 +5,8 @@ gamedatadir = $(pkgdatadir)/data
 bin_PROGRAMS = bean-counters-classic
 bean_counters_classic_SOURCES = beans.c \
 	gfx_blit_func.c gfx_blit_func.h \
-	path.c path.h
+	path.c path.h \
+	gettext.h
 
 if MACOSX
 bean_counters_classic_SOURCES += SDLMain.m SDLMain.h
