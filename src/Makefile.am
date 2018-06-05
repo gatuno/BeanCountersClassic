@@ -6,6 +6,8 @@ bin_PROGRAMS = bean-counters-classic
 bean_counters_classic_SOURCES = beans.c \
 	gfx_blit_func.c gfx_blit_func.h \
 	path.c path.h \
+	collider.c collider.h \
+	sdl2_rect.c sdl2_rect.h \
 	gettext.h
 
 if MACOSX

@@ -10,7 +10,8 @@ nobase_dist_collidergamedata_DATA = \
 	penguin_7.col \
 	penguin_8.col \
 	penguin_9.col \
-	penguin_10.col
+	penguin_10.col \
+	bag_3.col
 
 noinst_PROGRAMS = penguin-generator collider-generator
 penguin_generator_SOURCES = generate-penguins.c \
@@ -54,3 +55,4 @@ colliders: collider-generator penguin-generator
 	$(COLLIDER_GENERATOR) penguin_10.png penguin_10.col
 	
 	rm penguin_1.png penguin_2.png penguin_3.png penguin_4.png penguin_5.png penguin_6.png penguin_7.png penguin_8.png penguin_9.png penguin_10.png
+	$(COLLIDER_GENERATOR) $(top_srcdir)/data/images/bag_3.png bag_3.col

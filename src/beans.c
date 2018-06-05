@@ -42,6 +42,7 @@
 #include "path.h"
 
 #include "gfx_blit_func.h"
+#include "collider.h"
 
 #define FPS (1000/24)
 #define RANDOM(x) ((int) (x ## .0 * rand () / (RAND_MAX + 1.0)))
@@ -228,6 +229,38 @@ enum {
 	NUM_PENGUIN_FRAMES
 };
 
+enum {
+	COLLIDER_BAG_3,
+	
+	COLLIDER_PENGUIN_1,
+	COLLIDER_PENGUIN_2,
+	COLLIDER_PENGUIN_3,
+	COLLIDER_PENGUIN_4,
+	COLLIDER_PENGUIN_5,
+	COLLIDER_PENGUIN_6,
+	COLLIDER_PENGUIN_7,
+	COLLIDER_PENGUIN_8,
+	COLLIDER_PENGUIN_9,
+	COLLIDER_PENGUIN_10,
+	
+	NUM_COLLIDERS
+};
+
+const char *collider_names[NUM_COLLIDERS] = {
+	"collider/bag_3.col",
+	
+	"collider/penguin_1.col",
+	"collider/penguin_2.col",
+	"collider/penguin_3.col",
+	"collider/penguin_4.col",
+	"collider/penguin_5.col",
+	"collider/penguin_6.col",
+	"collider/penguin_7.col",
+	"collider/penguin_8.col",
+	"collider/penguin_9.col",
+	"collider/penguin_10.col"
+};
+
 const SDL_Color penguin_colors[18] = {
 	{0, 51, 102},
 	{51, 51, 51},
@@ -262,24 +295,24 @@ const int bag_0_points[31][3] = {
 	{1, 479, 27},
 	{1, 465, 27},
 	{1, 456, 28},
-	{2, 427, 43},
-	{2, 413, 46},
-	{2, 400, 49},
-	{2, 387, 51},
-	{2, 371, 59},
-	{2, 355, 66},
-	{2, 338, 73},
-	{2, 322, 88},
-	{2, 305, 102},
-	{2, 288, 117},
-	{2, 274, 139},
-	{2, 259, 161},
-	{2, 245, 183},
-	{2, 234, 211},
-	{2, 223, 239},
-	{2, 212, 268},
-	{2, 204, 300},
-	{2, 196, 333},
+	{2, 427, 86},
+	{2, 413, 89},
+	{2, 401, 93},
+	{2, 388, 97},
+	{2, 371, 103},
+	{2, 355, 110},
+	{2, 340, 119},
+	{2, 322, 131},
+	{2, 305, 146},
+	{2, 290, 161},
+	{2, 273, 181},
+	{2, 259, 203},
+	{2, 246, 226},
+	{2, 233, 254},
+	{2, 223, 282},
+	{2, 214, 311},
+	{2, 205, 343},
+	{2, 196, 375},
 	{3, 165, 408}
 };
 
@@ -390,6 +423,7 @@ SDL_Surface * screen;
 SDL_Surface * images[NUM_IMAGES];
 SDL_Surface * penguin_images[NUM_PENGUIN_FRAMES];
 int use_sound;
+Collider *colliders[NUM_COLLIDERS];
 
 int color_penguin = 0;
 
@@ -535,7 +569,7 @@ int game_loop (void) {
 	
 	int bags = 0;
 	int penguin_frame = 0;
-	int i, j;
+	int i, j, k;
 	
 	int level, activator;
 	int bag_activity = 15;
@@ -619,6 +653,12 @@ int game_loop (void) {
 			}
 		}
 		
+		if (bags >= 0 && bags <= 6) {
+			k = COLLIDER_PENGUIN_1 + bags;
+		} else {
+			k = COLLIDER_PENGUIN_7;
+		}
+		
 		/* Procesar las bolsas */
 		thisbag = first_bag;
 		while (thisbag != NULL) {
@@ -628,7 +668,23 @@ int game_loop (void) {
 			
 			j = thisbag->frame - thisbag->throw_length;
 			
-			/* Calcular aquí la colisión contra el pingüino */
+			if (j < 0) {
+				/* Calcular aquí la colisión contra el pingüino */
+				i = collider_hittest (colliders[COLLIDER_BAG_3], thisbag->bag_points[thisbag->frame][1], thisbag->bag_points[thisbag->frame][2], colliders[k], penguinx - 120, 251);
+			
+				if (i == SDL_TRUE) {
+					bags++;
+					k = COLLIDER_PENGUIN_1 + bags;
+				
+					/* Reproducir el sonido de "Agarrar bolsa" */
+				
+					/* Sumar score = score + (nivel * 2); */
+					airbone--;
+					delete_bag (thisbag);
+					thisbag = nextbag;
+					continue;
+				}
+			}
 			
 			if (j == 0) {
 				/* Eliminar del airbone */
@@ -736,6 +792,7 @@ void setup (void) {
 	int g;
 	char buffer_file[8192];
 	char *systemdata_path = get_systemdata_path ();
+	Collider *c;
 	
 	/* Inicializar el Video SDL */
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -806,6 +863,21 @@ void setup (void) {
 	color_penguin = RANDOM (18);
 	
 	setup_and_color_penguin ();
+	
+	/* Cargar los colliders de los pingüinos */
+	for (g = 0; g < NUM_COLLIDERS; g++) {
+		sprintf (buffer_file, "%s%s", systemdata_path, collider_names[g]);
+		c = collider_new_from_file (buffer_file);
+		
+		if (c == NULL) {
+			fprintf (stderr,
+				_("Failed to load data file:\n"
+				"%s\n"), buffer_file);
+			SDL_Quit ();
+			exit (1);
+		}
+		colliders[g] = c;
+	}
 	
 	if (use_sound) {
 		/*for (g = 0; g < NUM_SOUNDS; g++) {
