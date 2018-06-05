@@ -40,7 +40,67 @@ nobase_dist_gamedata_DATA = images/background.png \
 	images/bag_1.png \
 	images/bag_2.png \
 	images/bag_3.png \
-	images/bag_4.png
+	images/bag_4.png \
+	images/bag_stack_01.png \
+	images/bag_stack_02.png \
+	images/bag_stack_03.png \
+	images/bag_stack_04.png \
+	images/bag_stack_05.png \
+	images/bag_stack_06.png \
+	images/bag_stack_07.png \
+	images/bag_stack_08.png \
+	images/bag_stack_09.png \
+	images/bag_stack_10.png \
+	images/bag_stack_11.png \
+	images/bag_stack_12.png \
+	images/bag_stack_13.png \
+	images/bag_stack_14.png \
+	images/bag_stack_15.png \
+	images/bag_stack_16.png \
+	images/bag_stack_17.png \
+	images/bag_stack_18.png \
+	images/bag_stack_19.png \
+	images/bag_stack_20.png \
+	images/bag_stack_21.png \
+	images/bag_stack_22.png \
+	images/bag_stack_23.png \
+	images/bag_stack_24.png \
+	images/bag_stack_25.png \
+	images/bag_stack_26.png \
+	images/bag_stack_27.png \
+	images/bag_stack_28.png \
+	images/bag_stack_29.png \
+	images/bag_stack_30.png \
+	images/bag_stack_31.png \
+	images/bag_stack_32.png \
+	images/bag_stack_33.png \
+	images/bag_stack_34.png \
+	images/bag_stack_35.png \
+	images/bag_stack_36.png \
+	images/bag_stack_37.png \
+	images/bag_stack_38.png \
+	images/bag_stack_39.png \
+	images/bag_stack_40.png \
+	images/bag_stack_41.png \
+	images/bag_stack_42.png \
+	images/bag_stack_43.png \
+	images/bag_stack_44.png \
+	images/bag_stack_45.png \
+	images/bag_stack_46.png \
+	images/bag_stack_47.png \
+	images/bag_stack_48.png \
+	images/bag_stack_49.png \
+	images/bag_stack_50.png \
+	images/bag_stack_51.png \
+	images/bag_stack_52.png \
+	images/bag_stack_53.png \
+	images/bag_stack_54.png \
+	images/bag_stack_55.png \
+	images/bag_stack_56.png \
+	images/bag_stack_57.png \
+	images/bag_stack_58.png \
+	images/bag_stack_59.png \
+	images/bag_stack_60.png
 
 # Instalar los archivos .desktop e iconos
 applicationsdir = $(datadir)/applications

@@ -81,6 +81,72 @@ enum {
 	IMG_BAG_3,
 	IMG_BAG_4,
 	
+	IMG_BAG_STACK_1,
+	IMG_BAG_STACK_2,
+	IMG_BAG_STACK_3,
+	IMG_BAG_STACK_4,
+	IMG_BAG_STACK_5,
+	IMG_BAG_STACK_6,
+	IMG_BAG_STACK_7,
+	IMG_BAG_STACK_8,
+	IMG_BAG_STACK_9,
+	IMG_BAG_STACK_10,
+	
+	IMG_BAG_STACK_11,
+	IMG_BAG_STACK_12,
+	IMG_BAG_STACK_13,
+	IMG_BAG_STACK_14,
+	IMG_BAG_STACK_15,
+	IMG_BAG_STACK_16,
+	IMG_BAG_STACK_17,
+	IMG_BAG_STACK_18,
+	IMG_BAG_STACK_19,
+	IMG_BAG_STACK_20,
+	
+	IMG_BAG_STACK_21,
+	IMG_BAG_STACK_22,
+	IMG_BAG_STACK_23,
+	IMG_BAG_STACK_24,
+	IMG_BAG_STACK_25,
+	IMG_BAG_STACK_26,
+	IMG_BAG_STACK_27,
+	IMG_BAG_STACK_28,
+	IMG_BAG_STACK_29,
+	IMG_BAG_STACK_30,
+	
+	IMG_BAG_STACK_31,
+	IMG_BAG_STACK_32,
+	IMG_BAG_STACK_33,
+	IMG_BAG_STACK_34,
+	IMG_BAG_STACK_35,
+	IMG_BAG_STACK_36,
+	IMG_BAG_STACK_37,
+	IMG_BAG_STACK_38,
+	IMG_BAG_STACK_39,
+	IMG_BAG_STACK_40,
+	
+	IMG_BAG_STACK_41,
+	IMG_BAG_STACK_42,
+	IMG_BAG_STACK_43,
+	IMG_BAG_STACK_44,
+	IMG_BAG_STACK_45,
+	IMG_BAG_STACK_46,
+	IMG_BAG_STACK_47,
+	IMG_BAG_STACK_48,
+	IMG_BAG_STACK_49,
+	IMG_BAG_STACK_50,
+	
+	IMG_BAG_STACK_51,
+	IMG_BAG_STACK_52,
+	IMG_BAG_STACK_53,
+	IMG_BAG_STACK_54,
+	IMG_BAG_STACK_55,
+	IMG_BAG_STACK_56,
+	IMG_BAG_STACK_57,
+	IMG_BAG_STACK_58,
+	IMG_BAG_STACK_59,
+	IMG_BAG_STACK_60,
+	
 	NUM_IMAGES
 };
 
@@ -92,7 +158,68 @@ const char *images_names[NUM_IMAGES] = {
 	"images/bag_1.png",
 	"images/bag_2.png",
 	"images/bag_3.png",
-	"images/bag_4.png"
+	"images/bag_4.png",
+	
+	"images/bag_stack_01.png",
+	"images/bag_stack_02.png",
+	"images/bag_stack_03.png",
+	"images/bag_stack_04.png",
+	"images/bag_stack_05.png",
+	"images/bag_stack_06.png",
+	"images/bag_stack_07.png",
+	"images/bag_stack_08.png",
+	"images/bag_stack_09.png",
+	"images/bag_stack_10.png",
+	"images/bag_stack_11.png",
+	"images/bag_stack_12.png",
+	"images/bag_stack_13.png",
+	"images/bag_stack_14.png",
+	"images/bag_stack_15.png",
+	"images/bag_stack_16.png",
+	"images/bag_stack_17.png",
+	"images/bag_stack_18.png",
+	"images/bag_stack_19.png",
+	"images/bag_stack_20.png",
+	"images/bag_stack_21.png",
+	"images/bag_stack_22.png",
+	"images/bag_stack_23.png",
+	"images/bag_stack_24.png",
+	"images/bag_stack_25.png",
+	"images/bag_stack_26.png",
+	"images/bag_stack_27.png",
+	"images/bag_stack_28.png",
+	"images/bag_stack_29.png",
+	"images/bag_stack_30.png",
+	"images/bag_stack_31.png",
+	"images/bag_stack_32.png",
+	"images/bag_stack_33.png",
+	"images/bag_stack_34.png",
+	"images/bag_stack_35.png",
+	"images/bag_stack_36.png",
+	"images/bag_stack_37.png",
+	"images/bag_stack_38.png",
+	"images/bag_stack_39.png",
+	"images/bag_stack_40.png",
+	"images/bag_stack_41.png",
+	"images/bag_stack_42.png",
+	"images/bag_stack_43.png",
+	"images/bag_stack_44.png",
+	"images/bag_stack_45.png",
+	"images/bag_stack_46.png",
+	"images/bag_stack_47.png",
+	"images/bag_stack_48.png",
+	"images/bag_stack_49.png",
+	"images/bag_stack_50.png",
+	"images/bag_stack_51.png",
+	"images/bag_stack_52.png",
+	"images/bag_stack_53.png",
+	"images/bag_stack_54.png",
+	"images/bag_stack_55.png",
+	"images/bag_stack_56.png",
+	"images/bag_stack_57.png",
+	"images/bag_stack_58.png",
+	"images/bag_stack_59.png",
+	"images/bag_stack_60.png"
 };
 
 enum {
@@ -408,6 +535,39 @@ const int bag_3_points[33][3] = {
 	{3, 141, 422}
 };
 
+const int bag_stack_offsets[30][2] = {
+	{15, 251},
+	{14, 236},
+	{13, 227},
+	{13, 220},
+	{13, 211},
+	{13, 203},
+	{12, 192},
+	{12, 182},
+	{13, 173},
+	{9, 165}, // 10
+	{10, 158},
+	{10, 149},
+	{10, 141},
+	{8, 136},
+	{8, 125},
+	{8, 120},
+	{0, 114},
+	{2, 106},
+	{2, 94},
+	{2, 85}, // 20
+	{2, 79},
+	{2, 70},
+	{2, 69},
+	{2, 60},
+	{2, 52},
+	{2, 42},
+	{2, 35},
+	{2, 25},
+	{2, 20}
+	// {2, 11} del 30 al 60
+};
+
 /* Prototipos de función */
 int game_intro (void);
 int game_loop (void);
@@ -575,6 +735,8 @@ int game_loop (void) {
 	int bag_activity = 15;
 	int airbone, max_airbone = 1;
 	
+	int bag_stack = 0;
+	
 	/* Predibujar todo */
 	/*SDL_FillRect (screen, NULL, 0);
 	SDL_Flip (screen);*/
@@ -592,6 +754,14 @@ int game_loop (void) {
 					break;
 				case SDL_MOUSEBUTTONDOWN:
 					/* Tengo un Mouse Down */
+					if (event.button.button != SDL_BUTTON_LEFT) break;
+					if (penguinx <= 230 && bags > 0 && bags < 6) {
+						bag_stack++;
+						bags--;
+						
+						/* TODO: Incrementar score = score + (nivel * 3) */
+						/* TODO: Sonido de poner bolsa */
+					}
 					break;
 				case SDL_MOUSEBUTTONUP:
 					/* Tengo un mouse Up */
@@ -740,6 +910,23 @@ int game_loop (void) {
 		SDL_BlitSurface (images[IMG_PLATAFORM], NULL, screen, &rect);
 		
 		/* Dibujar las bolsas de café, arriba de la plataforma, por detrás del camión */
+		if (bag_stack > 0) {
+			// 64.95, 376.95
+			if (bag_stack < 30) {
+				rect.x = -6 + bag_stack_offsets[bag_stack - 1][0];
+				rect.y = 100 + bag_stack_offsets[bag_stack - 1][1];
+			} else {
+				rect.x = -4;
+				rect.y = 111;
+			}
+			
+			i = IMG_BAG_STACK_1 + (bag_stack - 1);
+			rect.w = images[i]->w;
+			rect.h = images[i]->h;
+			
+			SDL_BlitSurface (images[i], NULL, screen, &rect);
+		}
+		
 		thisbag = first_bag;
 		while (thisbag != NULL) {
 			if (thisbag->frame < thisbag->throw_length) {

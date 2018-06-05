@@ -19,6 +19,8 @@ config.log
 config.status
 .deps
 src/bean-counters-classic
+data/collider/collider-generator
+data/collider/penguin-generator
 *.o
 stamp-h1
 
