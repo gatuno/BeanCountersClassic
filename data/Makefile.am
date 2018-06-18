@@ -100,7 +100,8 @@ nobase_dist_gamedata_DATA = images/background.png \
 	images/bag_stack_57.png \
 	images/bag_stack_58.png \
 	images/bag_stack_59.png \
-	images/bag_stack_60.png
+	images/bag_stack_60.png \
+	images/truck.png
 
 # Instalar los archivos .desktop e iconos
 applicationsdir = $(datadir)/applications

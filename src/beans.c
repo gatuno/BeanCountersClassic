@@ -60,6 +60,14 @@
 #define AMASK 0xff000000
 #endif
 
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE !FALSE
+#endif
+
 typedef struct _BeanBag {
 	int bag;
 	int throw_length;
@@ -147,6 +155,8 @@ enum {
 	IMG_BAG_STACK_59,
 	IMG_BAG_STACK_60,
 	
+	IMG_TRUCK,
+	
 	NUM_IMAGES
 };
 
@@ -219,7 +229,9 @@ const char *images_names[NUM_IMAGES] = {
 	"images/bag_stack_57.png",
 	"images/bag_stack_58.png",
 	"images/bag_stack_59.png",
-	"images/bag_stack_60.png"
+	"images/bag_stack_60.png",
+	
+	"images/truck.png"
 };
 
 enum {
@@ -730,10 +742,14 @@ int game_loop (void) {
 	int bags = 0;
 	int penguin_frame = 0;
 	int i, j, k;
-	
+	int vidas = 3;
+	int animacion;
+	int try_visible = FALSE, gameover_visible = FALSE;
+	int next_level_visible = FALSE;
 	int level, activator;
 	int bag_activity = 15;
-	int airbone, max_airbone = 1;
+	int airbone = 0, max_airbone = 1;
+	int nivel = 1;
 	
 	int bag_stack = 0;
 	
@@ -759,8 +775,25 @@ int game_loop (void) {
 						bag_stack++;
 						bags--;
 						
-						/* TODO: Incrementar score = score + (nivel * 3) */
+						if (next_level_visible == FALSE) {
+							/* TODO: Incrementar score = score + (nivel * 3) */
+						} else {
+							/* TODO: Incrementar score = score + (nivel * 25) */
+						}
 						/* TODO: Sonido de poner bolsa */
+						
+						if (bag_stack == (nivel + 1) * 10) {
+							/* Activar la pantalla de next_level */
+							if (nivel != 5) {
+								next_level_visible = TRUE;
+								animacion = 0;
+								
+								airbone = 1000;
+								printf ("Next level visible\n");
+							} else {
+								/* TODO: Fin del juego */
+							}
+						}
 					}
 					break;
 				case SDL_MOUSEBUTTONUP:
@@ -776,7 +809,7 @@ int game_loop (void) {
 					if (key == SDLK_ESCAPE) {
 						done = GAME_QUIT;
 					}
-					if (key == SDLK_a) {
+					/*if (key == SDLK_a) {
 						if (bags < 9) {
 							bags++;
 							penguin_frame = 0;
@@ -794,12 +827,12 @@ int game_loop (void) {
 						add_bag (2);
 					} else if (key == SDLK_r) {
 						add_bag (3);
-					}
+					}*/
 					break;
 			}
 		}
 		
-		if (bags < 6) {
+		if (bags < 6 && next_level_visible == FALSE) {
 			SDL_GetMouseState (&handposx, NULL);
 		
 			penguinx = handposx;
@@ -838,17 +871,36 @@ int game_loop (void) {
 			
 			j = thisbag->frame - thisbag->throw_length;
 			
-			if (j < 0) {
+			if (j < 0 && next_level_visible == FALSE && bags < 6) {
 				/* Calcular aquí la colisión contra el pingüino */
 				i = collider_hittest (colliders[COLLIDER_BAG_3], thisbag->bag_points[thisbag->frame][1], thisbag->bag_points[thisbag->frame][2], colliders[k], penguinx - 120, 251);
 			
 				if (i == SDL_TRUE) {
-					bags++;
+					if (bags < 6) bags++;
+					
 					k = COLLIDER_PENGUIN_1 + bags;
 				
 					/* Reproducir el sonido de "Agarrar bolsa" */
-				
-					/* Sumar score = score + (nivel * 2); */
+					
+					if (bags >= 6 && (try_visible == FALSE || gameover_visible == FALSE)) {
+						/* Esta bolsa crasheó al pingüino */
+						printf ("Penguin Crash\n");
+						if (vidas > 0) {
+							try_visible = TRUE;
+							printf ("Try again visible\n");
+							animacion = 0;
+							airbone = 1000; /* El airbone bloquea que salgan más objetos */
+							vidas--;
+							
+							/* TODO: Reproducir aquí el sonido de golpe */
+						} else {
+							gameover_visible = TRUE;
+							printf ("Game Over visible\n");
+						}
+					} else {
+						/* Sumar solo si no crasheó al pinguino
+						 * score = score + (nivel * 2); */
+					}
 					airbone--;
 					delete_bag (thisbag);
 					thisbag = nextbag;
@@ -953,8 +1005,56 @@ int game_loop (void) {
 			thisbag = thisbag->next;
 		}
 		
-		/* TODO: Dibujar aquí el camión */
+		if (try_visible == TRUE) {
+			animacion++;
+			
+			/* TODO: Dibujar el mensaje de "Intentar de nuevo" */
+			
+		}
+		
+		if (next_level_visible == TRUE) {
+			animacion++;
+			
+			/* TODO: Dibujar el mensaje de nivel completo */
+		}
+		
+		rect.x = 568;
+		rect.y = 72;
+		rect.w = images[IMG_TRUCK]->w;
+		rect.h = images[IMG_TRUCK]->h;
+		
+		SDL_BlitSurface (images[IMG_TRUCK], NULL, screen, &rect);
+		
 		SDL_Flip (screen);
+		
+		if (try_visible == TRUE && animacion >= 92) {
+			/* Continuar nivel */
+			airbone = 0;
+			bags = 0;
+			try_visible = FALSE;
+		}
+		
+		if (next_level_visible == TRUE && animacion >= 88) {
+			/* Pasar de nivel */
+			if (bag_activity > 1) {
+				bag_activity = bag_activity - 3;
+			}
+			
+			if (nivel != 2) {
+				max_airbone++;
+			}
+			
+			nivel++;
+			
+			airbone = 0;
+			
+			bag_stack = 0;
+			bags = 0;
+			penguin_frame = 0;
+			
+			/* Sumar fishMax = fishMax + 4 */
+			next_level_visible = FALSE;
+		}
 		
 		now_time = SDL_GetTicks ();
 		if (now_time < last_time + FPS) SDL_Delay(last_time + FPS - now_time);
