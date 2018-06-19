@@ -185,6 +185,8 @@ enum {
 	IMG_ANVIL_22,
 	IMG_ANVIL_23,
 	
+	IMG_ONEUP,
+	
 	NUM_IMAGES
 };
 
@@ -284,7 +286,9 @@ const char *images_names[NUM_IMAGES] = {
 	"images/anvil_20.png",
 	"images/anvil_21.png",
 	"images/anvil_22.png",
-	"images/anvil_23.png"
+	"images/anvil_23.png",
+	
+	"images/oneup.png"
 };
 
 enum {
@@ -435,6 +439,8 @@ enum {
 	COLLIDER_PENGUIN_9,
 	COLLIDER_PENGUIN_10,
 	
+	COLLIDER_ONEUP,
+	
 	NUM_COLLIDERS
 };
 
@@ -450,7 +456,9 @@ const char *collider_names[NUM_COLLIDERS] = {
 	"collider/penguin_7.col",
 	"collider/penguin_8.col",
 	"collider/penguin_9.col",
-	"collider/penguin_10.col"
+	"collider/penguin_10.col",
+	
+	"collider/oneup.col"
 };
 
 const SDL_Color penguin_colors[18] = {
@@ -686,6 +694,44 @@ const int anvil_collider_offsets [23][2] = {
 	{482, 399}
 };
 
+const int oneup_offsets[35][2] = {
+	{636, 142},
+	{624, 130},
+	{611, 119},
+	{598, 107},
+	{586, 96},
+	{573, 84},
+	{560, 72},
+	{547, 70},
+	{534, 68},
+	{521, 66},
+	{507, 64},
+	{494, 62},
+	{481, 60},
+	{468, 58},
+	{454, 56},
+	{442, 67},
+	{431, 80},
+	{420, 93},
+	{409, 105},
+	{398, 118},
+	{392, 139},
+	{386, 159},
+	{380, 180},
+	{373, 201},
+	{367, 221},
+	{361, 242},
+	{355, 263},
+	{349, 284},
+	{343, 304},
+	{337, 325},
+	{334, 351},
+	{330, 378},
+	{327, 404},
+	{324, 431},
+	{321, 458}
+};
+
 /* Prototipos de función */
 int game_intro (void);
 int game_loop (void);
@@ -858,6 +904,7 @@ int game_loop (void) {
 	int airbone = 0, max_airbone = 1;
 	int nivel = 1;
 	int anvil_out = FALSE;
+	int oneup_toggle = TRUE;
 	
 	int bag_stack = 0;
 	
@@ -898,6 +945,7 @@ int game_loop (void) {
 								
 								airbone = 1000;
 								printf ("Next level visible\n");
+								oneup_toggle = TRUE;
 							} else {
 								/* TODO: Fin del juego */
 							}
@@ -964,6 +1012,10 @@ int game_loop (void) {
 					add_bag (5);
 					airbone++;
 					anvil_out = TRUE;
+				} else if (i == 4 && oneup_toggle == TRUE && nivel >= 3 && nivel % 2 == 1) {
+					add_bag (4);
+					oneup_toggle = FALSE;
+					airbone++;
 				}
 			}
 		}
@@ -1045,6 +1097,20 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
+			} else if (j < 0 && thisbag->bag == 4) {
+				i = collider_hittest (colliders[COLLIDER_ONEUP], thisbag->object_points[thisbag->frame][0], thisbag->object_points[thisbag->frame][1], colliders[k], penguinx - 120, 251);
+				
+				if (i == SDL_TRUE) {
+					vidas++;
+					
+					/* TODO: Reproducir sonido boing */
+					
+					/* TODO: Mostrar la notificación de 1 vida */
+					airbone--;
+					delete_bag (thisbag);
+					thisbag = nextbag;
+					continue;
+				}
 			}
 			
 			if (thisbag->bag <= 3) {
@@ -1059,7 +1125,10 @@ int game_loop (void) {
 				}
 			}
 			
-			if (j >= 35) {
+			if (thisbag->bag == 4 && j >= 0) {
+				/* Eliminar la vida */
+				delete_bag (thisbag);
+			} else if (j >= 35) {
 				/* Eliminar esta bolsa */
 				delete_bag (thisbag);
 			}
@@ -1163,11 +1232,23 @@ int game_loop (void) {
 					j = thisbag->frame - thisbag->throw_length;
 				}
 				
+				rect.w = images[i]->w;
+				rect.h = images[i]->h;
+				
 				if (i == IMG_ANVIL_23 && j > 25) {
 					SDL_gfxBlitRGBAWithAlpha (images[i], NULL, screen, &rect, 255 - SDL_ALPHA_OPAQUE * (j - 25) / 10);
 				} else {
 					SDL_BlitSurface (images[i], NULL, screen, &rect);
 				}
+			} else if (thisbag->bag == 4) {
+				/* Dibujar la vida */
+				i = IMG_ONEUP;
+				rect.x = thisbag->object_points[thisbag->frame][0];
+				rect.y = thisbag->object_points[thisbag->frame][1];
+				rect.w = images[i]->w;
+				rect.h = images[i]->h;
+				
+				SDL_BlitSurface (images[i], NULL, screen, &rect);
 			}
 			
 			thisbag = thisbag->next;
@@ -1553,6 +1634,9 @@ void add_bag (int tipo) {
 	} else if (tipo == 5) {
 		new->throw_length = 24;
 		new->object_points = anvil_offsets;
+	} else if (tipo == 4) {
+		new->throw_length = 35;
+		new->object_points = oneup_offsets;
 	}
 	
 	/* Ahora sus campos para lista doble ligada */
