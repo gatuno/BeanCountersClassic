@@ -101,7 +101,31 @@ nobase_dist_gamedata_DATA = images/background.png \
 	images/bag_stack_58.png \
 	images/bag_stack_59.png \
 	images/bag_stack_60.png \
-	images/truck.png
+	images/truck.png \
+	images/anvil_00.png \
+	images/anvil_01.png \
+	images/anvil_02.png \
+	images/anvil_03.png \
+	images/anvil_04.png \
+	images/anvil_05.png \
+	images/anvil_06.png \
+	images/anvil_07.png \
+	images/anvil_08.png \
+	images/anvil_09.png \
+	images/anvil_10.png \
+	images/anvil_11.png \
+	images/anvil_12.png \
+	images/anvil_13.png \
+	images/anvil_14.png \
+	images/anvil_15.png \
+	images/anvil_16.png \
+	images/anvil_17.png \
+	images/anvil_18.png \
+	images/anvil_19.png \
+	images/anvil_20.png \
+	images/anvil_21.png \
+	images/anvil_22.png \
+	images/anvil_23.png
 
 # Instalar los archivos .desktop e iconos
 applicationsdir = $(datadir)/applications

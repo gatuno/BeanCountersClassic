@@ -26,6 +26,7 @@
 typedef struct _Collider Collider;
 
 Collider * collider_new_from_file (const char *filename);
+Collider * collider_new_block (int w, int h);
 int collider_hittest (Collider *a, int x1, int y1, Collider *b, int x2, int y2);
 
 #endif

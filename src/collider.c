@@ -135,6 +135,38 @@ bad_load:
 	return NULL;
 }
 
+Collider * collider_new_block (int w, int h) {
+	Collider *new;
+	int map_size;
+	
+	new = (Collider *) malloc (sizeof (Collider));
+	
+	if (new == NULL) return NULL;
+	
+	new->size_w = w;
+	new->size_h = h;
+	new->offset_x = new->offset_y = 0;
+	
+	if (new->size_w % 32 != 0) {
+		new->pitch = (new->size_w / 32) + 2;
+	} else {
+		new->pitch = (new->size_w / 32) + 1;
+	}
+	map_size = new->pitch * new->size_h;
+	
+	/* Reservar los bytes necesarios */
+	new->pixels = (Uint32 *) malloc (sizeof (Uint32) * map_size);
+	
+	if (new->pixels == NULL) {
+		free (new);
+		return NULL;
+	}
+	
+	memset (new->pixels, -1, sizeof (Uint32) * map_size);
+	
+	return new;
+}
+
 int collider_hittest (Collider *a, int x1, int y1, Collider *b, int x2, int y2) {
 	SDL_Rect rect_left, rect_right, result;
 	int first = SDL_FALSE;

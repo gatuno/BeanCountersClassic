@@ -73,7 +73,10 @@ typedef struct _BeanBag {
 	int throw_length;
 	int frame;
 	
-	const int (*bag_points)[3];
+	union {
+		const int (*bag_points)[3];
+		const int (*object_points)[2];
+	};
 	
 	struct _BeanBag *prev;
 	struct _BeanBag *next;
@@ -157,6 +160,31 @@ enum {
 	
 	IMG_TRUCK,
 	
+	IMG_ANVIL_0,
+	IMG_ANVIL_1,
+	IMG_ANVIL_2,
+	IMG_ANVIL_3,
+	IMG_ANVIL_4,
+	IMG_ANVIL_5,
+	IMG_ANVIL_6,
+	IMG_ANVIL_7,
+	IMG_ANVIL_8,
+	IMG_ANVIL_9,
+	IMG_ANVIL_10,
+	IMG_ANVIL_11,
+	IMG_ANVIL_12,
+	IMG_ANVIL_13,
+	IMG_ANVIL_14,
+	IMG_ANVIL_15,
+	IMG_ANVIL_16,
+	IMG_ANVIL_17,
+	IMG_ANVIL_18,
+	IMG_ANVIL_19,
+	IMG_ANVIL_20,
+	IMG_ANVIL_21,
+	IMG_ANVIL_22,
+	IMG_ANVIL_23,
+	
 	NUM_IMAGES
 };
 
@@ -231,7 +259,32 @@ const char *images_names[NUM_IMAGES] = {
 	"images/bag_stack_59.png",
 	"images/bag_stack_60.png",
 	
-	"images/truck.png"
+	"images/truck.png",
+	
+	"images/anvil_00.png",
+	"images/anvil_01.png",
+	"images/anvil_02.png",
+	"images/anvil_03.png",
+	"images/anvil_04.png",
+	"images/anvil_05.png",
+	"images/anvil_06.png",
+	"images/anvil_07.png",
+	"images/anvil_08.png",
+	"images/anvil_09.png",
+	"images/anvil_10.png",
+	"images/anvil_11.png",
+	"images/anvil_12.png",
+	"images/anvil_13.png",
+	"images/anvil_14.png",
+	"images/anvil_15.png",
+	"images/anvil_16.png",
+	"images/anvil_17.png",
+	"images/anvil_18.png",
+	"images/anvil_19.png",
+	"images/anvil_20.png",
+	"images/anvil_21.png",
+	"images/anvil_22.png",
+	"images/anvil_23.png"
 };
 
 enum {
@@ -580,6 +633,59 @@ const int bag_stack_offsets[30][2] = {
 	// {2, 11} del 30 al 60
 };
 
+const int anvil_offsets [24][2] = {
+	{631, 276},
+	{609, 226},
+	{589, 185},
+	{570, 151},
+	{551, 126},
+	{534, 109},
+	{519, 101},
+	{509, 100},
+	{503, 100},
+	{495, 103},
+	{486, 111},
+	{478, 124},
+	{470, 137},
+	{464, 154},
+	{458, 171},
+	{454, 192},
+	{450, 214},
+	{446, 238},
+	{443, 263},
+	{441, 291},
+	{437, 320},
+	{435, 352},
+	{432, 384},
+	{422, 406}
+};
+
+const int anvil_collider_offsets [23][2] = {
+	{692, 298},
+	{669, 245},
+	{647, 201},
+	{627, 165},
+	{608, 138},
+	{590, 120},
+	{574, 111},
+	{564, 109},
+	{559, 109},
+	{550, 112},
+	{541, 119},
+	{533, 132},
+	{525, 145},
+	{519, 162},
+	{512, 180},
+	{508, 202},
+	{503, 223},
+	{499, 249},
+	{496, 275},
+	{492, 304},
+	{488, 333},
+	{485, 366},
+	{482, 399}
+};
+
 /* Prototipos de función */
 int game_intro (void);
 int game_loop (void);
@@ -596,6 +702,7 @@ SDL_Surface * images[NUM_IMAGES];
 SDL_Surface * penguin_images[NUM_PENGUIN_FRAMES];
 int use_sound;
 Collider *colliders[NUM_COLLIDERS];
+Collider *colliders_hazards[3];
 
 int color_penguin = 0;
 
@@ -750,6 +857,7 @@ int game_loop (void) {
 	int bag_activity = 15;
 	int airbone = 0, max_airbone = 1;
 	int nivel = 1;
+	int anvil_out = FALSE;
 	
 	int bag_stack = 0;
 	
@@ -852,6 +960,10 @@ int game_loop (void) {
 				if (i <= 3) {
 					add_bag (i);
 					airbone++;
+				} else if (i == 5 && nivel >= 2 && anvil_out == FALSE) {
+					add_bag (5);
+					airbone++;
+					anvil_out = TRUE;
 				}
 			}
 		}
@@ -871,7 +983,7 @@ int game_loop (void) {
 			
 			j = thisbag->frame - thisbag->throw_length;
 			
-			if (j < 0 && next_level_visible == FALSE && bags < 6) {
+			if (j < 0 && next_level_visible == FALSE && bags < 6 && thisbag->bag <= 3) {
 				/* Calcular aquí la colisión contra el pingüino */
 				i = collider_hittest (colliders[COLLIDER_BAG_3], thisbag->bag_points[thisbag->frame][1], thisbag->bag_points[thisbag->frame][2], colliders[k], penguinx - 120, 251);
 			
@@ -906,11 +1018,45 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
+			} else if (j < 0 && thisbag->bag == 5) {
+				i = collider_hittest (colliders_hazards[0], anvil_collider_offsets[thisbag->frame][0], anvil_collider_offsets[thisbag->frame][1], colliders[k], penguinx - 120, 251);
+				
+				if (i == SDL_TRUE) {
+					bags = 7;
+					
+					/* TODO: Reproducir el sonido de golpe de yunque */
+					/* TODO: Acomodar la animación de "Crash" */
+					
+					printf ("Penguin Crash by anvil\n");
+					if (vidas > 0) {
+						try_visible = TRUE;
+						printf ("Try again visible\n");
+						animacion = 0;
+						airbone = 1000; /* El airbone bloquea que salgan más objetos */
+						vidas--;
+					} else {
+						gameover_visible = TRUE;
+						printf ("Game Over visible\n");
+					}
+					
+					anvil_out = FALSE;
+					airbone--;
+					delete_bag (thisbag);
+					thisbag = nextbag;
+					continue;
+				}
 			}
 			
-			if (j == 0) {
-				/* Eliminar del airbone */
-				airbone--;
+			if (thisbag->bag <= 3) {
+				if (j == 0) {
+					/* Eliminar del airbone */
+					airbone--;
+				}
+			} else if (thisbag->bag == 5) {
+				if (j == 2) {
+					airbone--;
+					anvil_out = FALSE;
+				}
 			}
 			
 			if (j >= 35) {
@@ -981,25 +1127,47 @@ int game_loop (void) {
 		
 		thisbag = first_bag;
 		while (thisbag != NULL) {
-			if (thisbag->frame < thisbag->throw_length) {
-				/* Dibujar la bolsa */
-				i = IMG_BAG_1 + thisbag->bag_points[thisbag->frame][0];
-				rect.x = thisbag->bag_points[thisbag->frame][1];
-				rect.y = thisbag->bag_points[thisbag->frame][2];
-			} else {
-				i = IMG_BAG_4;
-				rect.x = thisbag->bag_points[thisbag->throw_length][1];
-				rect.y = thisbag->bag_points[thisbag->throw_length][2];
-				j = thisbag->frame - thisbag->throw_length;
-			}
+			if (thisbag->bag <= 3) {
+				/* Dibujar las bolsas de café estándar */
+				if (thisbag->frame < thisbag->throw_length) {
+					/* Dibujar la bolsa */
+					i = IMG_BAG_1 + thisbag->bag_points[thisbag->frame][0];
+					rect.x = thisbag->bag_points[thisbag->frame][1];
+					rect.y = thisbag->bag_points[thisbag->frame][2];
+				} else {
+					i = IMG_BAG_4;
+					rect.x = thisbag->bag_points[thisbag->throw_length][1];
+					rect.y = thisbag->bag_points[thisbag->throw_length][2];
+					j = thisbag->frame - thisbag->throw_length;
+				}
 			
-			rect.w = images[i]->w;
-			rect.h = images[i]->h;
+				rect.w = images[i]->w;
+				rect.h = images[i]->h;
 			
-			if (i == IMG_BAG_4 && j > 25) {
-				SDL_gfxBlitRGBAWithAlpha (images[i], NULL, screen, &rect, 255 - SDL_ALPHA_OPAQUE * (j - 25) / 10);
-			} else {
-				SDL_BlitSurface (images[i], NULL, screen, &rect);
+				if (i == IMG_BAG_4 && j > 25) {
+					SDL_gfxBlitRGBAWithAlpha (images[i], NULL, screen, &rect, 255 - SDL_ALPHA_OPAQUE * (j - 25) / 10);
+				} else {
+					SDL_BlitSurface (images[i], NULL, screen, &rect);
+				}
+			} else if (thisbag->bag == 5) {
+				/* Dibujar un yunque */
+				if (thisbag->frame < thisbag->throw_length) {
+					i = IMG_ANVIL_0 + thisbag->frame;
+					rect.x = thisbag->object_points[thisbag->frame][0];
+					rect.y = thisbag->object_points[thisbag->frame][1];
+					j = 0;
+				} else {
+					i = IMG_ANVIL_23;
+					rect.x = thisbag->object_points[23][0];
+					rect.y = thisbag->object_points[23][1];
+					j = thisbag->frame - thisbag->throw_length;
+				}
+				
+				if (i == IMG_ANVIL_23 && j > 25) {
+					SDL_gfxBlitRGBAWithAlpha (images[i], NULL, screen, &rect, 255 - SDL_ALPHA_OPAQUE * (j - 25) / 10);
+				} else {
+					SDL_BlitSurface (images[i], NULL, screen, &rect);
+				}
 			}
 			
 			thisbag = thisbag->next;
@@ -1165,6 +1333,9 @@ void setup (void) {
 		}
 		colliders[g] = c;
 	}
+	
+	/* Generar los colliders de bloque */
+	colliders_hazards[0] = collider_new_block (9, 45);
 	
 	if (use_sound) {
 		/*for (g = 0; g < NUM_SOUNDS; g++) {
@@ -1379,6 +1550,9 @@ void add_bag (int tipo) {
 	} else if (tipo == 3) {
 		new->throw_length = 32;
 		new->bag_points = bag_3_points;
+	} else if (tipo == 5) {
+		new->throw_length = 24;
+		new->object_points = anvil_offsets;
 	}
 	
 	/* Ahora sus campos para lista doble ligada */
