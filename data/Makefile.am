@@ -126,7 +126,9 @@ nobase_dist_gamedata_DATA = images/background.png \
 	images/anvil_21.png \
 	images/anvil_22.png \
 	images/anvil_23.png \
-	images/oneup.png
+	images/oneup.png \
+	images/fish.png \
+	images/fish_dropped.png
 
 # Instalar los archivos .desktop e iconos
 applicationsdir = $(datadir)/applications

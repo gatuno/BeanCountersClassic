@@ -187,6 +187,9 @@ enum {
 	
 	IMG_ONEUP,
 	
+	IMG_FISH,
+	IMG_FISH_DROPPED,
+	
 	NUM_IMAGES
 };
 
@@ -288,7 +291,10 @@ const char *images_names[NUM_IMAGES] = {
 	"images/anvil_22.png",
 	"images/anvil_23.png",
 	
-	"images/oneup.png"
+	"images/oneup.png",
+	
+	"images/fish.png",
+	"images/fish_dropped.png"
 };
 
 enum {
@@ -694,6 +700,19 @@ const int anvil_collider_offsets [23][2] = {
 	{482, 399}
 };
 
+const int fish_collider_offests [10][2] = {
+	{337, 157},
+	{326, 173},
+	{315, 191},
+	{303, 207},
+	{292, 229},
+	{282, 251},
+	{271, 272},
+	{260, 299},
+	{250, 325},
+	{240, 351},
+};
+
 const int oneup_offsets[35][2] = {
 	{636, 142},
 	{624, 130},
@@ -732,6 +751,44 @@ const int oneup_offsets[35][2] = {
 	{321, 458}
 };
 
+const int fish_offsets[35][2] = {
+	{634, 247},
+	{603, 213},
+	{574, 184},
+	{546, 158},
+	{518, 136},
+	{492, 119},
+	{468, 105},
+	{445, 96},
+	{425, 90},
+	{407, 87},
+	{393, 86},
+	{383, 86},
+	{375, 87},
+	{368, 88},
+	{361, 90},
+	{354, 91},
+	{347, 93},
+	{336, 98},
+	{325, 104},
+	{314, 110},
+	{302, 121},
+	{289, 132},
+	{277, 143},
+	{265, 160},
+	{254, 177},
+	{242, 194},
+	{231, 215},
+	{220, 237},
+	{210, 259},
+	{200, 285},
+	{189, 311},
+	{179, 337},
+	{170, 367},
+	{160, 397},
+	{122, 433}
+};
+
 /* Prototipos de función */
 int game_intro (void);
 int game_loop (void);
@@ -748,8 +805,8 @@ SDL_Surface * images[NUM_IMAGES];
 SDL_Surface * penguin_images[NUM_PENGUIN_FRAMES];
 int use_sound;
 Collider *colliders[NUM_COLLIDERS];
-Collider *colliders_hazards[3];
-
+Collider *colliders_hazard_anvil;
+Collider *colliders_hazard_fish[10];
 int color_penguin = 0;
 
 Mix_Chunk * sounds[NUM_SOUNDS];
@@ -903,8 +960,10 @@ int game_loop (void) {
 	int bag_activity = 15;
 	int airbone = 0, max_airbone = 1;
 	int nivel = 1;
-	int anvil_out = FALSE;
+	int anvil_out = FALSE, fish_out = FALSE;
 	int oneup_toggle = TRUE;
+	int fish_max = 4;
+	int fish_counter = 0;
 	
 	int bag_stack = 0;
 	
@@ -946,6 +1005,8 @@ int game_loop (void) {
 								airbone = 1000;
 								printf ("Next level visible\n");
 								oneup_toggle = TRUE;
+								fish_counter = 0;
+								fish_max = fish_max + 4;
 							} else {
 								/* TODO: Fin del juego */
 							}
@@ -1016,6 +1077,11 @@ int game_loop (void) {
 					add_bag (4);
 					oneup_toggle = FALSE;
 					airbone++;
+				} else if (i == 6 && nivel >= 3 && fish_out == FALSE && fish_counter <= fish_max) {
+					add_bag (6);
+					fish_counter++;
+					fish_out = TRUE;
+					airbone++;
 				}
 			}
 		}
@@ -1070,8 +1136,8 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
-			} else if (j < 0 && thisbag->bag == 5) {
-				i = collider_hittest (colliders_hazards[0], anvil_collider_offsets[thisbag->frame][0], anvil_collider_offsets[thisbag->frame][1], colliders[k], penguinx - 120, 251);
+			} else if (j < 0 && thisbag->bag == 5 && next_level_visible == FALSE) {
+				i = collider_hittest (colliders_hazard_anvil, anvil_collider_offsets[thisbag->frame][0], anvil_collider_offsets[thisbag->frame][1], colliders[k], penguinx - 120, 251);
 				
 				if (i == SDL_TRUE) {
 					bags = 7;
@@ -1097,7 +1163,7 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
-			} else if (j < 0 && thisbag->bag == 4) {
+			} else if (j < 0 && thisbag->bag == 4 && next_level_visible == FALSE) {
 				i = collider_hittest (colliders[COLLIDER_ONEUP], thisbag->object_points[thisbag->frame][0], thisbag->object_points[thisbag->frame][1], colliders[k], penguinx - 120, 251);
 				
 				if (i == SDL_TRUE) {
@@ -1111,22 +1177,49 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
+			} else if (thisbag->frame >= 22 && thisbag->frame <= 31 && thisbag->bag == 6 && next_level_visible == FALSE) {
+				k = thisbag->frame - 22;
+				
+				i = collider_hittest (colliders_hazard_fish[k], fish_collider_offests[k][0], fish_collider_offests[k][1], colliders[k], penguinx - 120, 251);
+				
+				if (i == SDL_TRUE) {
+					bags = 8;
+					
+					/* TODO: Reproducir el sonido de golpe de pescado */
+					/* Acomodar la animación de crash */
+					if (vidas > 0) {
+						try_visible = TRUE;
+						animacion = 0;
+						airbone = 1000; /* El airbone bloquea que salgan más objetos */
+						vidas--;
+					} else {
+						gameover_visible = TRUE;
+					}
+					
+					fish_out = FALSE;
+					airbone--;
+					delete_bag (thisbag);
+					thisbag = nextbag;
+					continue;
+				}
 			}
 			
-			if (thisbag->bag <= 3) {
-				if (j == 0) {
-					/* Eliminar del airbone */
-					airbone--;
-				}
-			} else if (thisbag->bag == 5) {
-				if (j == 2) {
-					airbone--;
-					anvil_out = FALSE;
-				}
+			if (thisbag->bag <= 3 && j == 0) {
+				/* Eliminar del airbone */
+				airbone--;
+			} else if (thisbag->bag == 5 && j == 0) {
+				/* Eliminar el yunque del airbone */
+				airbone--;
+				anvil_out = FALSE;
+			} else if (thisbag->bag == 6 && j == 0) {
+				/* Eliminar el pescado del airbone */
+				airbone--;
+				fish_out = FALSE;
 			}
 			
 			if (thisbag->bag == 4 && j >= 0) {
 				/* Eliminar la vida */
+				airbone--;
 				delete_bag (thisbag);
 			} else if (j >= 35) {
 				/* Eliminar esta bolsa */
@@ -1176,7 +1269,7 @@ int game_loop (void) {
 		
 		SDL_BlitSurface (images[IMG_PLATAFORM], NULL, screen, &rect);
 		
-		/* Dibujar las bolsas de café, arriba de la plataforma, por detrás del camión */
+		/* Dibujar la pila de bolsas de café, arriba de la plataforma, por detrás del camión */
 		if (bag_stack > 0) {
 			// 64.95, 376.95
 			if (bag_stack < 30) {
@@ -1194,6 +1287,7 @@ int game_loop (void) {
 			SDL_BlitSurface (images[i], NULL, screen, &rect);
 		}
 		
+		/* Dibujar los objetos en pantalla */
 		thisbag = first_bag;
 		while (thisbag != NULL) {
 			if (thisbag->bag <= 3) {
@@ -1249,6 +1343,25 @@ int game_loop (void) {
 				rect.h = images[i]->h;
 				
 				SDL_BlitSurface (images[i], NULL, screen, &rect);
+			} else if (thisbag->bag == 6) {
+				if (thisbag->frame < thisbag->throw_length) {
+					i = IMG_FISH;
+					rect.x = thisbag->object_points[thisbag->frame][0];
+					rect.y = thisbag->object_points[thisbag->frame][1];
+				} else {
+					i = IMG_FISH_DROPPED;
+					rect.x = thisbag->object_points[34][0];
+					rect.y = thisbag->object_points[34][1];
+					j = thisbag->frame - thisbag->throw_length;
+				}
+				rect.w = images[i]->w;
+				rect.h = images[i]->h;
+				
+				if (i == IMG_FISH_DROPPED && j > 25) {
+					SDL_gfxBlitRGBAWithAlpha (images[i], NULL, screen, &rect, 255 - SDL_ALPHA_OPAQUE * (j - 25) / 10);
+				} else {
+					SDL_BlitSurface (images[i], NULL, screen, &rect);
+				}
 			}
 			
 			thisbag = thisbag->next;
@@ -1416,7 +1529,18 @@ void setup (void) {
 	}
 	
 	/* Generar los colliders de bloque */
-	colliders_hazards[0] = collider_new_block (9, 45);
+	colliders_hazard_anvil = collider_new_block (9, 45);
+	
+	colliders_hazard_fish[0] = collider_new_block (22, 18);
+	colliders_hazard_fish[1] = collider_new_block (21, 18);
+	colliders_hazard_fish[2] = collider_new_block (20, 18);
+	colliders_hazard_fish[3] = collider_new_block (19, 18);
+	colliders_hazard_fish[4] = collider_new_block (18, 18);
+	colliders_hazard_fish[5] = collider_new_block (17, 18);
+	colliders_hazard_fish[6] = collider_new_block (15, 18);
+	colliders_hazard_fish[7] = collider_new_block (14, 18);
+	colliders_hazard_fish[8] = collider_new_block (13, 18);
+	colliders_hazard_fish[9] = collider_new_block (11, 18);
 	
 	if (use_sound) {
 		/*for (g = 0; g < NUM_SOUNDS; g++) {
@@ -1632,11 +1756,14 @@ void add_bag (int tipo) {
 		new->throw_length = 32;
 		new->bag_points = bag_3_points;
 	} else if (tipo == 5) {
-		new->throw_length = 24;
+		new->throw_length = 23;
 		new->object_points = anvil_offsets;
 	} else if (tipo == 4) {
 		new->throw_length = 35;
 		new->object_points = oneup_offsets;
+	} else if (tipo == 6) {
+		new->throw_length = 34;
+		new->object_points = fish_offsets;
 	}
 	
 	/* Ahora sus campos para lista doble ligada */
