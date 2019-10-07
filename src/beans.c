@@ -190,6 +190,9 @@ enum {
 	IMG_FISH,
 	IMG_FISH_DROPPED,
 	
+	IMG_FLOWER,
+	IMG_FLOWER_DROPPED,
+	
 	NUM_IMAGES
 };
 
@@ -294,7 +297,10 @@ const char *images_names[NUM_IMAGES] = {
 	"images/oneup.png",
 	
 	"images/fish.png",
-	"images/fish_dropped.png"
+	"images/fish_dropped.png",
+	
+	"images/flower.png",
+	"images/flower_dropped.png"
 };
 
 enum {
@@ -700,7 +706,7 @@ const int anvil_collider_offsets [23][2] = {
 	{482, 399}
 };
 
-const int fish_collider_offests [10][2] = {
+const int fish_collider_offsets [10][2] = {
 	{337, 157},
 	{326, 173},
 	{315, 191},
@@ -711,6 +717,20 @@ const int fish_collider_offests [10][2] = {
 	{260, 299},
 	{250, 325},
 	{240, 351},
+};
+
+const int flower_collider_offsets [11][2] = {
+	{465, 163},
+	{455, 174},
+	{446, 184},
+	{436, 194},
+	{427, 210},
+	{419, 226},
+	{410, 242},
+	{403, 264},
+	{396, 286},
+	{388, 308},
+	{381, 330}
 };
 
 const int oneup_offsets[35][2] = {
@@ -789,6 +809,42 @@ const int fish_offsets[35][2] = {
 	{122, 433}
 };
 
+const int flower_offsets[32][2] = {
+	{646, 217},
+	{626, 192},
+	{606, 167},
+	{587, 147},
+	{569, 128},
+	{551, 115},
+	{534, 101},
+	{519, 94},
+	{503, 87},
+	{492, 85},
+	{481, 82},
+	{475, 82},
+	{467, 82},
+	{463, 83},
+	{457, 85},
+	{452, 86},
+	{443, 91},
+	{435, 95},
+	{426, 100},
+	{417, 110},
+	{408, 120},
+	{399, 131},
+	{390, 146},
+	{382, 162},
+	{374, 178},
+	{366, 198},
+	{359, 218},
+	{352, 239},
+	{345, 264},
+	{339, 288},
+	{332, 313},
+	{334, 382}
+};
+
+
 /* Prototipos de función */
 int game_intro (void);
 int game_loop (void);
@@ -805,7 +861,7 @@ SDL_Surface * images[NUM_IMAGES];
 SDL_Surface * penguin_images[NUM_PENGUIN_FRAMES];
 int use_sound;
 Collider *colliders[NUM_COLLIDERS];
-Collider *colliders_hazard_anvil;
+Collider *colliders_hazard_block;
 Collider *colliders_hazard_fish[10];
 int color_penguin = 0;
 
@@ -951,7 +1007,7 @@ int game_loop (void) {
 	
 	int bags = 0;
 	int penguin_frame = 0;
-	int i, j, k;
+	int i, j, k, l;
 	int vidas = 3;
 	int animacion;
 	int try_visible = FALSE, gameover_visible = FALSE;
@@ -960,7 +1016,7 @@ int game_loop (void) {
 	int bag_activity = 15;
 	int airbone = 0, max_airbone = 1;
 	int nivel = 1;
-	int anvil_out = FALSE, fish_out = FALSE;
+	int anvil_out = FALSE, fish_out = FALSE, flower_out = FALSE;
 	int oneup_toggle = TRUE;
 	int fish_max = 4;
 	int fish_counter = 0;
@@ -1082,6 +1138,10 @@ int game_loop (void) {
 					fish_counter++;
 					fish_out = TRUE;
 					airbone++;
+				} else if (i == 7 && nivel >= 4 && flower_out == FALSE) {
+					add_bag (7);
+					flower_out = TRUE;
+					airbone++;
 				}
 			}
 		}
@@ -1132,12 +1192,13 @@ int game_loop (void) {
 						 * score = score + (nivel * 2); */
 					}
 					airbone--;
+					printf ("Airbone: %i\n", airbone);
 					delete_bag (thisbag);
 					thisbag = nextbag;
 					continue;
 				}
 			} else if (j < 0 && thisbag->bag == 5 && next_level_visible == FALSE) {
-				i = collider_hittest (colliders_hazard_anvil, anvil_collider_offsets[thisbag->frame][0], anvil_collider_offsets[thisbag->frame][1], colliders[k], penguinx - 120, 251);
+				i = collider_hittest (colliders_hazard_block, anvil_collider_offsets[thisbag->frame][0], anvil_collider_offsets[thisbag->frame][1], colliders[k], penguinx - 120, 251);
 				
 				if (i == SDL_TRUE) {
 					bags = 7;
@@ -1177,10 +1238,10 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
-			} else if (thisbag->frame >= 22 && thisbag->frame <= 31 && thisbag->bag == 6 && next_level_visible == FALSE) {
-				k = thisbag->frame - 22;
+			} else if (thisbag->bag == 6 && thisbag->frame >= 22 && thisbag->frame <= 31 && next_level_visible == FALSE) {
+				l = thisbag->frame - 22;
 				
-				i = collider_hittest (colliders_hazard_fish[k], fish_collider_offests[k][0], fish_collider_offests[k][1], colliders[k], penguinx - 120, 251);
+				i = collider_hittest (colliders_hazard_fish[l], fish_collider_offsets[l][0], fish_collider_offsets[l][1], colliders[k], penguinx - 120, 251);
 				
 				if (i == SDL_TRUE) {
 					bags = 8;
@@ -1202,6 +1263,31 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
+			} else if (thisbag->bag == 7 && thisbag->frame >= 18 && thisbag->frame <= 28 && next_level_visible == FALSE) {
+				l = thisbag->frame - 18;
+				i = collider_hittest (colliders_hazard_block, flower_collider_offsets[l][0], flower_collider_offsets[l][1], colliders[k], penguinx - 120, 251);
+				
+				if (i == SDL_TRUE) {
+					bags = 9;
+					
+					/* TODO: Reproducir el sonido de golpe de florero */
+					/* TODO: Acomodar la animación de "Crash" */
+					
+					if (vidas > 0) {
+						try_visible = TRUE;
+						animacion = 0;
+						airbone = 1000; /* El airbone bloquea que salgan más objetos */
+						vidas--;
+					} else {
+						gameover_visible = TRUE;
+					}
+					
+					flower_out = FALSE;
+					airbone--;
+					delete_bag (thisbag);
+					thisbag = nextbag;
+					continue;
+				}
 			}
 			
 			if (thisbag->bag <= 3 && j == 0) {
@@ -1215,6 +1301,9 @@ int game_loop (void) {
 				/* Eliminar el pescado del airbone */
 				airbone--;
 				fish_out = FALSE;
+			} else if (thisbag->bag == 7 && j == 0) {
+				airbone--;
+				flower_out = FALSE;
 			}
 			
 			if (thisbag->bag == 4 && j >= 0) {
@@ -1358,6 +1447,25 @@ int game_loop (void) {
 				rect.h = images[i]->h;
 				
 				if (i == IMG_FISH_DROPPED && j > 25) {
+					SDL_gfxBlitRGBAWithAlpha (images[i], NULL, screen, &rect, 255 - SDL_ALPHA_OPAQUE * (j - 25) / 10);
+				} else {
+					SDL_BlitSurface (images[i], NULL, screen, &rect);
+				}
+			} else if (thisbag->bag == 7) {
+				if (thisbag->frame < thisbag->throw_length) {
+					i = IMG_FLOWER;
+					rect.x = thisbag->object_points[thisbag->frame][0];
+					rect.y = thisbag->object_points[thisbag->frame][1];
+				} else {
+					i = IMG_FLOWER_DROPPED;
+					rect.x = thisbag->object_points[31][0];
+					rect.y = thisbag->object_points[31][1];
+					j = thisbag->frame - thisbag->throw_length;
+				}
+				rect.w = images[i]->w;
+				rect.h = images[i]->h;
+				
+				if (i == IMG_FLOWER_DROPPED && j > 25) {
 					SDL_gfxBlitRGBAWithAlpha (images[i], NULL, screen, &rect, 255 - SDL_ALPHA_OPAQUE * (j - 25) / 10);
 				} else {
 					SDL_BlitSurface (images[i], NULL, screen, &rect);
@@ -1529,7 +1637,7 @@ void setup (void) {
 	}
 	
 	/* Generar los colliders de bloque */
-	colliders_hazard_anvil = collider_new_block (9, 45);
+	colliders_hazard_block = collider_new_block (9, 45);
 	
 	colliders_hazard_fish[0] = collider_new_block (22, 18);
 	colliders_hazard_fish[1] = collider_new_block (21, 18);
@@ -1764,6 +1872,9 @@ void add_bag (int tipo) {
 	} else if (tipo == 6) {
 		new->throw_length = 34;
 		new->object_points = fish_offsets;
+	} else if (tipo == 7) {
+		new->throw_length = 31;
+		new->object_points = flower_offsets;
 	}
 	
 	/* Ahora sus campos para lista doble ligada */
