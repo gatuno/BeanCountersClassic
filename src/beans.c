@@ -68,6 +68,12 @@
 #define TRUE !FALSE
 #endif
 
+enum {
+	NO_NEXT_LEVEL = 0,
+	NEXT_LEVEL,
+	GAME_WIN
+};
+
 typedef struct _BeanBag {
 	int bag;
 	int throw_length;
@@ -1011,7 +1017,7 @@ int game_loop (void) {
 	int vidas = 3;
 	int animacion;
 	int try_visible = FALSE, gameover_visible = FALSE;
-	int next_level_visible = FALSE;
+	int next_level_visible = NO_NEXT_LEVEL;
 	int level, activator;
 	int bag_activity = 15;
 	int airbone = 0, max_airbone = 1;
@@ -1041,13 +1047,13 @@ int game_loop (void) {
 				case SDL_MOUSEBUTTONDOWN:
 					/* Tengo un Mouse Down */
 					if (event.button.button != SDL_BUTTON_LEFT) break;
-					if (penguinx <= 230 && bags > 0 && bags < 6) {
+					if (penguinx <= 230 && bags > 0 && bags < 6 && next_level_visible != GAME_WIN) {
 						bag_stack++;
 						bags--;
 						
-						if (next_level_visible == FALSE) {
+						if (next_level_visible == NO_NEXT_LEVEL) {
 							/* TODO: Incrementar score = score + (nivel * 3) */
-						} else {
+						} else if (next_level_visible == NEXT_LEVEL) {
 							/* TODO: Incrementar score = score + (nivel * 25) */
 						}
 						/* TODO: Sonido de poner bolsa */
@@ -1055,7 +1061,7 @@ int game_loop (void) {
 						if (bag_stack == (nivel + 1) * 10) {
 							/* Activar la pantalla de next_level */
 							if (nivel != 5) {
-								next_level_visible = TRUE;
+								next_level_visible = NEXT_LEVEL;
 								animacion = 0;
 								
 								airbone = 1000;
@@ -1065,6 +1071,8 @@ int game_loop (void) {
 								fish_max = fish_max + 4;
 							} else {
 								/* TODO: Fin del juego */
+								next_level_visible = GAME_WIN;
+								airbone = 1000;
 							}
 						}
 					}
@@ -1105,7 +1113,7 @@ int game_loop (void) {
 			}
 		}
 		
-		if (bags < 6 && next_level_visible == FALSE) {
+		if (bags < 6 && next_level_visible == NO_NEXT_LEVEL) {
 			SDL_GetMouseState (&handposx, NULL);
 		
 			penguinx = handposx;
@@ -1161,7 +1169,7 @@ int game_loop (void) {
 			
 			j = thisbag->frame - thisbag->throw_length;
 			
-			if (j < 0 && next_level_visible == FALSE && bags < 6 && thisbag->bag <= 3) {
+			if (j < 0 && next_level_visible == NO_NEXT_LEVEL && bags < 6 && thisbag->bag <= 3) {
 				/* Calcular aquí la colisión contra el pingüino */
 				i = collider_hittest (colliders[COLLIDER_BAG_3], thisbag->bag_points[thisbag->frame][1], thisbag->bag_points[thisbag->frame][2], colliders[k], penguinx - 120, 251);
 			
@@ -1197,7 +1205,7 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
-			} else if (j < 0 && thisbag->bag == 5 && next_level_visible == FALSE) {
+			} else if (j < 0 && thisbag->bag == 5 && next_level_visible == NO_NEXT_LEVEL) {
 				i = collider_hittest (colliders_hazard_block, anvil_collider_offsets[thisbag->frame][0], anvil_collider_offsets[thisbag->frame][1], colliders[k], penguinx - 120, 251);
 				
 				if (i == SDL_TRUE) {
@@ -1224,7 +1232,7 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
-			} else if (j < 0 && thisbag->bag == 4 && next_level_visible == FALSE) {
+			} else if (j < 0 && thisbag->bag == 4 && next_level_visible == NO_NEXT_LEVEL) {
 				i = collider_hittest (colliders[COLLIDER_ONEUP], thisbag->object_points[thisbag->frame][0], thisbag->object_points[thisbag->frame][1], colliders[k], penguinx - 120, 251);
 				
 				if (i == SDL_TRUE) {
@@ -1238,7 +1246,7 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
-			} else if (thisbag->bag == 6 && thisbag->frame >= 22 && thisbag->frame <= 31 && next_level_visible == FALSE) {
+			} else if (thisbag->bag == 6 && thisbag->frame >= 22 && thisbag->frame <= 31 && next_level_visible == NO_NEXT_LEVEL) {
 				l = thisbag->frame - 22;
 				
 				i = collider_hittest (colliders_hazard_fish[l], fish_collider_offsets[l][0], fish_collider_offsets[l][1], colliders[k], penguinx - 120, 251);
@@ -1263,7 +1271,7 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
-			} else if (thisbag->bag == 7 && thisbag->frame >= 18 && thisbag->frame <= 28 && next_level_visible == FALSE) {
+			} else if (thisbag->bag == 7 && thisbag->frame >= 18 && thisbag->frame <= 28 && next_level_visible == NO_NEXT_LEVEL) {
 				l = thisbag->frame - 18;
 				i = collider_hittest (colliders_hazard_block, flower_collider_offsets[l][0], flower_collider_offsets[l][1], colliders[k], penguinx - 120, 251);
 				
@@ -1482,18 +1490,33 @@ int game_loop (void) {
 			
 		}
 		
-		if (next_level_visible == TRUE) {
-			animacion++;
+		if (next_level_visible == NEXT_LEVEL) {
 			
-			/* TODO: Dibujar el mensaje de nivel completo */
+			
+			if (animacion < 36) {
+				rect.x = 568 + (198 * animacion) / 36;
+			} else if (animacion >= 36 && animacion < 60) {
+				rect.x = 766; /* Fuera, no dibuja */
+			} else if (animacion >= 60 && animacion < 77) {
+				rect.x = 646 + (120 * (77 - animacion)) / 16;
+			} else if (animacion >= 77) {
+				rect.x = 568 + (78 * (97 - animacion)) / 20;
+			}
+			rect.y = 72;
+			rect.w = images[IMG_TRUCK]->w;
+			rect.h = images[IMG_TRUCK]->h;
+			
+			SDL_BlitSurface (images[IMG_TRUCK], NULL, screen, &rect);
+			animacion++;
+		} else {
+			/* Dibujar el camión normal */
+			rect.x = 568;
+			rect.y = 72;
+			rect.w = images[IMG_TRUCK]->w;
+			rect.h = images[IMG_TRUCK]->h;
+	
+			SDL_BlitSurface (images[IMG_TRUCK], NULL, screen, &rect);
 		}
-		
-		rect.x = 568;
-		rect.y = 72;
-		rect.w = images[IMG_TRUCK]->w;
-		rect.h = images[IMG_TRUCK]->h;
-		
-		SDL_BlitSurface (images[IMG_TRUCK], NULL, screen, &rect);
 		
 		SDL_Flip (screen);
 		
@@ -1504,7 +1527,7 @@ int game_loop (void) {
 			try_visible = FALSE;
 		}
 		
-		if (next_level_visible == TRUE && animacion >= 88) {
+		if (next_level_visible == NEXT_LEVEL && animacion >= 97) {
 			/* Pasar de nivel */
 			if (bag_activity > 1) {
 				bag_activity = bag_activity - 3;
@@ -1522,8 +1545,7 @@ int game_loop (void) {
 			bags = 0;
 			penguin_frame = 0;
 			
-			/* Sumar fishMax = fishMax + 4 */
-			next_level_visible = FALSE;
+			next_level_visible = NO_NEXT_LEVEL;
 		}
 		
 		now_time = SDL_GetTicks ();
