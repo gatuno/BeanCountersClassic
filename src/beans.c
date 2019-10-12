@@ -199,6 +199,11 @@ enum {
 	IMG_FLOWER,
 	IMG_FLOWER_DROPPED,
 	
+	IMG_CRASH_1,
+	IMG_CRASH_2,
+	IMG_CRASH_3,
+	IMG_CRASH_4,
+	
 	NUM_IMAGES
 };
 
@@ -306,7 +311,12 @@ const char *images_names[NUM_IMAGES] = {
 	"images/fish_dropped.png",
 	
 	"images/flower.png",
-	"images/flower_dropped.png"
+	"images/flower_dropped.png",
+	
+	"images/crash_1.png",
+	"images/crash_2.png",
+	"images/crash_3.png",
+	"images/crash_4.png"
 };
 
 enum {
@@ -1026,12 +1036,9 @@ int game_loop (void) {
 	int oneup_toggle = TRUE;
 	int fish_max = 4;
 	int fish_counter = 0;
+	int crash_anim = -1;
 	
 	int bag_stack = 0;
-	
-	/* Predibujar todo */
-	/*SDL_FillRect (screen, NULL, 0);
-	SDL_Flip (screen);*/
 	
 	SDL_EventState (SDL_MOUSEMOTION, SDL_IGNORE);
 	
@@ -1213,6 +1220,7 @@ int game_loop (void) {
 					
 					/* TODO: Reproducir el sonido de golpe de yunque */
 					/* TODO: Acomodar la animación de "Crash" */
+					crash_anim = 0;
 					
 					printf ("Penguin Crash by anvil\n");
 					if (vidas > 0) {
@@ -1255,7 +1263,8 @@ int game_loop (void) {
 					bags = 8;
 					
 					/* TODO: Reproducir el sonido de golpe de pescado */
-					/* Acomodar la animación de crash */
+					crash_anim = 0;
+					
 					if (vidas > 0) {
 						try_visible = TRUE;
 						animacion = 0;
@@ -1279,7 +1288,7 @@ int game_loop (void) {
 					bags = 9;
 					
 					/* TODO: Reproducir el sonido de golpe de florero */
-					/* TODO: Acomodar la animación de "Crash" */
+					crash_anim = 0;
 					
 					if (vidas > 0) {
 						try_visible = TRUE;
@@ -1481,6 +1490,24 @@ int game_loop (void) {
 			}
 			
 			thisbag = thisbag->next;
+		}
+		
+		if (crash_anim >= 0) {
+			if (crash_anim == 4) {
+				i = IMG_CRASH_4;
+			} else {
+				i = IMG_CRASH_1 + crash_anim;
+			}
+			rect.x = penguinx - 90;
+			rect.y = 282;
+			rect.w = images[i]->w;
+			rect.h = images[i]->h;
+			
+			SDL_BlitSurface (images[i], NULL, screen, &rect);
+			
+			crash_anim++;
+			
+			if (crash_anim == 5) crash_anim = -1;
 		}
 		
 		if (try_visible == TRUE) {
