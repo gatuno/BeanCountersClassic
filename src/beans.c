@@ -43,6 +43,7 @@
 
 #include "gfx_blit_func.h"
 #include "collider.h"
+#include "draw-text.h"
 
 #define FPS (1000/24)
 #define RANDOM(x) ((int) (x ## .0 * rand () / (RAND_MAX + 1.0)))
@@ -472,6 +473,13 @@ enum {
 	NUM_COLLIDERS
 };
 
+enum {
+	TEXT_LIVES,
+	TEXT_TRUCKS,
+	TEXT_SCORE,
+	NUM_TEXTS
+};
+
 const char *collider_names[NUM_COLLIDERS] = {
 	"collider/bag_3.col",
 	
@@ -860,6 +868,11 @@ const int flower_offsets[32][2] = {
 	{334, 382}
 };
 
+const char *text_strings[NUM_TEXTS] = {
+	gettext_noop ("LIVES:"),
+	gettext_noop ("TRUCK:"),
+	gettext_noop ("SCORE:")
+};
 
 /* Prototipos de función */
 int game_intro (void);
@@ -874,6 +887,7 @@ void delete_bag (BeanBag *p);
 /* Variables globales */
 SDL_Surface * screen;
 SDL_Surface * images[NUM_IMAGES];
+SDL_Surface * texts[NUM_TEXTS];
 SDL_Surface * penguin_images[NUM_PENGUIN_FRAMES];
 int use_sound;
 Collider *colliders[NUM_COLLIDERS];
@@ -886,6 +900,8 @@ Mix_Music * mus_carnie;
 
 BeanBag *first_bag = NULL;
 BeanBag *last_bag = NULL;
+
+TTF_Font *ttf24_klickclack;
 
 int main (int argc, char *argv[]) {
 	/* Recuperar las rutas del sistema */
@@ -1037,8 +1053,21 @@ int game_loop (void) {
 	int fish_max = 4;
 	int fish_counter = 0;
 	int crash_anim = -1;
-	
+	int score = 0;
 	int bag_stack = 0;
+	char buffer[20];
+	
+	SDL_Color negro, blanco;
+	blanco.r = blanco.g = blanco.b = 255;
+	blanco.unused = 255;
+	negro.r = negro.g = negro.b = 0;
+	negro.unused = 255;
+	
+	SDL_Surface *vidas_p, *nivel_p, *score_p;
+	
+	vidas_p = draw_text_with_shadow (ttf24_klickclack, 2, "3", blanco, negro);
+	nivel_p = draw_text_with_shadow (ttf24_klickclack, 2, "1", blanco, negro);
+	score_p = draw_text_with_shadow (ttf24_klickclack, 2, "0", blanco, negro);
 	
 	SDL_EventState (SDL_MOUSEMOTION, SDL_IGNORE);
 	
@@ -1059,9 +1088,15 @@ int game_loop (void) {
 						bags--;
 						
 						if (next_level_visible == NO_NEXT_LEVEL) {
-							/* TODO: Incrementar score = score + (nivel * 3) */
+							score = score + (nivel * 3);
+							SDL_FreeSurface (score_p);
+							snprintf (buffer, sizeof (buffer), "%d", score);
+							score_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
 						} else if (next_level_visible == NEXT_LEVEL) {
-							/* TODO: Incrementar score = score + (nivel * 25) */
+							score = score + (nivel * 25);
+							SDL_FreeSurface (score_p);
+							snprintf (buffer, sizeof (buffer), "%d", score);
+							score_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
 						}
 						/* TODO: Sonido de poner bolsa */
 						
@@ -1196,15 +1231,20 @@ int game_loop (void) {
 							animacion = 0;
 							airbone = 1000; /* El airbone bloquea que salgan más objetos */
 							vidas--;
-							
+							SDL_FreeSurface (vidas_p);
+							snprintf (buffer, sizeof (buffer), "%d", vidas);
+							vidas_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
 							/* TODO: Reproducir aquí el sonido de golpe */
 						} else {
 							gameover_visible = TRUE;
 							printf ("Game Over visible\n");
 						}
 					} else {
-						/* Sumar solo si no crasheó al pinguino
-						 * score = score + (nivel * 2); */
+						/* Sumar solo si no crasheó al pinguino */
+						score = score + (nivel * 2);
+						SDL_FreeSurface (score_p);
+						snprintf (buffer, sizeof (buffer), "%d", score);
+						score_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
 					}
 					airbone--;
 					printf ("Airbone: %i\n", airbone);
@@ -1229,6 +1269,9 @@ int game_loop (void) {
 						animacion = 0;
 						airbone = 1000; /* El airbone bloquea que salgan más objetos */
 						vidas--;
+						SDL_FreeSurface (vidas_p);
+						snprintf (buffer, sizeof (buffer), "%d", vidas);
+						vidas_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
 					} else {
 						gameover_visible = TRUE;
 						printf ("Game Over visible\n");
@@ -1246,6 +1289,9 @@ int game_loop (void) {
 				if (i == SDL_TRUE) {
 					vidas++;
 					
+					SDL_FreeSurface (vidas_p);
+					snprintf (buffer, sizeof (buffer), "%d", vidas);
+					vidas_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
 					/* TODO: Reproducir sonido boing */
 					
 					/* TODO: Mostrar la notificación de 1 vida */
@@ -1270,6 +1316,9 @@ int game_loop (void) {
 						animacion = 0;
 						airbone = 1000; /* El airbone bloquea que salgan más objetos */
 						vidas--;
+						SDL_FreeSurface (vidas_p);
+						snprintf (buffer, sizeof (buffer), "%d", vidas);
+						vidas_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
 					} else {
 						gameover_visible = TRUE;
 					}
@@ -1295,6 +1344,9 @@ int game_loop (void) {
 						animacion = 0;
 						airbone = 1000; /* El airbone bloquea que salgan más objetos */
 						vidas--;
+						SDL_FreeSurface (vidas_p);
+						snprintf (buffer, sizeof (buffer), "%d", vidas);
+						vidas_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
 					} else {
 						gameover_visible = TRUE;
 					}
@@ -1392,6 +1444,51 @@ int game_loop (void) {
 			
 			SDL_BlitSurface (images[i], NULL, screen, &rect);
 		}
+		
+		/* Los mensajes de texto van antes de las bolsas */
+		rect.x = 30;
+		rect.y = 8;
+		rect.w = texts[TEXT_LIVES]->w;
+		rect.h = texts[TEXT_LIVES]->h;
+		
+		SDL_BlitSurface (texts[TEXT_LIVES], NULL, screen, &rect);
+		
+		rect.x = 30 + texts[TEXT_LIVES]->w + 2;
+		rect.y = 8;
+		rect.w = vidas_p->w;
+		rect.h = vidas_p->h;
+		
+		SDL_BlitSurface (vidas_p, NULL, screen, &rect);
+		
+		rect.x = 216;
+		rect.y = 8;
+		rect.w = texts[TEXT_TRUCKS]->w;
+		rect.h = texts[TEXT_TRUCKS]->h;
+		
+		SDL_BlitSurface (texts[TEXT_TRUCKS], NULL, screen, &rect);
+		
+		rect.x = 216 + texts[TEXT_TRUCKS]->w + 5;
+		rect.y = 8;
+		rect.w = nivel_p->w;
+		rect.h = nivel_p->h;
+		
+		SDL_BlitSurface (nivel_p, NULL, screen, &rect);
+		
+		rect.x = 390;
+		rect.y = 8;
+		rect.w = texts[TEXT_SCORE]->w;
+		rect.h = texts[TEXT_SCORE]->h;
+		
+		SDL_BlitSurface (texts[TEXT_SCORE], NULL, screen, &rect);
+		
+		rect.x = 390 + texts[TEXT_SCORE]->w + 5;
+		rect.h = 8;
+		rect.w = score_p->w;
+		rect.h = score_p->h;
+		
+		SDL_BlitSurface (score_p, NULL, screen, &rect);
+		
+		/* TODO: Dibujar el mensaje de nivel completo */
 		
 		/* Dibujar los objetos en pantalla */
 		thisbag = first_bag;
@@ -1518,8 +1615,6 @@ int game_loop (void) {
 		}
 		
 		if (next_level_visible == NEXT_LEVEL) {
-			
-			
 			if (animacion < 36) {
 				rect.x = 568 + (198 * animacion) / 36;
 			} else if (animacion >= 36 && animacion < 60) {
@@ -1566,6 +1661,9 @@ int game_loop (void) {
 			
 			nivel++;
 			
+			SDL_FreeSurface (nivel_p);
+			snprintf (buffer, sizeof (buffer), "%d", nivel);
+			nivel_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
 			airbone = 0;
 			
 			bag_stack = 0;
@@ -1739,8 +1837,28 @@ void setup (void) {
 		exit (1);
 	}
 	
+	sprintf (buffer_file, "%s%s", systemdata_path, "klickclack.ttf");
+	ttf24_klickclack = TTF_OpenFont (buffer_file, 24);
+	
+	if (!ttf24_klickclack) {
+		fprintf (stderr,
+			_("Failed to load font file 'Klick Clack\n"
+			"The error returned by SDL is:\n"
+			"%s\n"), TTF_GetError ());
+		SDL_Quit ();
+		exit (1);
+	}
+	
 	// TODO: Favor de manejar correctamente el bind_textdomain_codeset
-	//bind_textdomain_codeset (PACKAGE, "UTF-8");
+	bind_textdomain_codeset (PACKAGE, "UTF-8");
+	
+	SDL_Color negro, blanco;
+	blanco.r = blanco.g = blanco.b = 255;
+	negro.r = negro.g = negro.b = 0;
+	
+	for (g = 0; g < NUM_TEXTS; g++) {
+		texts[g] = draw_text_with_shadow (ttf24_klickclack, 2, _(text_strings[g]), blanco, negro);
+	}
 }
 
 void setup_and_color_penguin (void) {

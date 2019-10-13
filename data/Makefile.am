@@ -134,7 +134,8 @@ nobase_dist_gamedata_DATA = images/background.png \
 	images/crash_1.png \
 	images/crash_2.png \
 	images/crash_3.png \
-	images/crash_4.png
+	images/crash_4.png \
+	klickclack.ttf
 
 # Instalar los archivos .desktop e iconos
 applicationsdir = $(datadir)/applications

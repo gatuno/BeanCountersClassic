@@ -8,6 +8,7 @@ bean_counters_classic_SOURCES = beans.c \
 	path.c path.h \
 	collider.c collider.h \
 	sdl2_rect.c sdl2_rect.h \
+	draw-text.c draw-text.h \
 	gettext.h
 
 if MACOSX
