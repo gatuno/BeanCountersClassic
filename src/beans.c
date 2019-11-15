@@ -44,6 +44,7 @@
 #include "gfx_blit_func.h"
 #include "collider.h"
 #include "draw-text.h"
+#include "zoom.h"
 
 #define FPS (1000/24)
 #define RANDOM(x) ((int) (x ## .0 * rand () / (RAND_MAX + 1.0)))
@@ -477,6 +478,14 @@ enum {
 	TEXT_LIVES,
 	TEXT_TRUCKS,
 	TEXT_SCORE,
+	
+	TEXT_TRY_AGAIN,
+	
+	TEXT_UNLOADED,
+	TEXT_NEXT_TRUCK,
+	
+	TEXT_GAME_OVER,
+	
 	NUM_TEXTS
 };
 
@@ -871,7 +880,14 @@ const int flower_offsets[32][2] = {
 const char *text_strings[NUM_TEXTS] = {
 	gettext_noop ("LIVES:"),
 	gettext_noop ("TRUCK:"),
-	gettext_noop ("SCORE:")
+	gettext_noop ("SCORE:"),
+	
+	gettext_noop ("TRY AGAIN..."),
+	
+	gettext_noop ("TRUCK\nUNLOADED!!"),
+	gettext_noop ("NEXT TRUCK!!"),
+	
+	gettext_noop ("Game Over!")
 };
 
 /* Prototipos de función */
@@ -879,7 +895,7 @@ int game_intro (void);
 int game_loop (void);
 int game_finish (void);
 void setup (void);
-SDL_Surface * set_video_mode(unsigned flags);
+SDL_Surface * set_video_mode (unsigned flags);
 void setup_and_color_penguin (void);
 void add_bag (int tipo);
 void delete_bag (BeanBag *p);
@@ -902,6 +918,7 @@ BeanBag *first_bag = NULL;
 BeanBag *last_bag = NULL;
 
 TTF_Font *ttf24_klickclack;
+TTF_Font *ttf196_klickclack;
 
 int main (int argc, char *argv[]) {
 	/* Recuperar las rutas del sistema */
@@ -1056,18 +1073,36 @@ int game_loop (void) {
 	int score = 0;
 	int bag_stack = 0;
 	char buffer[20];
+	SDL_Surface *numbers[3][20];
+	double z;
 	
-	SDL_Color negro, blanco;
+	SDL_Color negro, blanco, amarillo;
 	blanco.r = blanco.g = blanco.b = 255;
 	blanco.unused = 255;
 	negro.r = negro.g = negro.b = 0;
 	negro.unused = 255;
+	amarillo.r = amarillo.g = 255;
+	amarillo.b = 0;
+	amarillo.unused = 255;
 	
 	SDL_Surface *vidas_p, *nivel_p, *score_p;
 	
 	vidas_p = draw_text_with_shadow (ttf24_klickclack, 2, "3", blanco, negro);
 	nivel_p = draw_text_with_shadow (ttf24_klickclack, 2, "1", blanco, negro);
 	score_p = draw_text_with_shadow (ttf24_klickclack, 2, "0", blanco, negro);
+	
+	/* Preparar los números en tamaño grande */
+	numbers[0][19] = draw_text_with_shadow (ttf196_klickclack, 3, "1", amarillo, negro);
+	numbers[1][19] = draw_text_with_shadow (ttf196_klickclack, 3, "2", amarillo, negro);
+	numbers[2][19] = draw_text_with_shadow (ttf196_klickclack, 3, "3", amarillo, negro);
+	
+	z = 1.0;
+	for (i = 18; i >= 0; i--) {
+		z = z - 0.016118421;
+		numbers[0][i] = zoomSurface (numbers[0][19], z, z, 1);
+		numbers[1][i] = zoomSurface (numbers[1][19], z, z, 1);
+		numbers[2][i] = zoomSurface (numbers[2][19], z, z, 1);
+	}
 	
 	SDL_EventState (SDL_MOUSEMOTION, SDL_IGNORE);
 	
@@ -1211,7 +1246,8 @@ int game_loop (void) {
 			
 			j = thisbag->frame - thisbag->throw_length;
 			
-			if (j < 0 && next_level_visible == NO_NEXT_LEVEL && bags < 6 && thisbag->bag <= 3) {
+			/* Nota, no entra a este if si el pinguino está crasheado */
+			if (j < 0 && next_level_visible == NO_NEXT_LEVEL && bags < 6 && thisbag->bag <= 3 && thisbag->frame > 6) {
 				/* Calcular aquí la colisión contra el pingüino */
 				i = collider_hittest (colliders[COLLIDER_BAG_3], thisbag->bag_points[thisbag->frame][1], thisbag->bag_points[thisbag->frame][2], colliders[k], penguinx - 120, 251);
 			
@@ -1222,7 +1258,7 @@ int game_loop (void) {
 				
 					/* Reproducir el sonido de "Agarrar bolsa" */
 					
-					if (bags >= 6 && (try_visible == FALSE || gameover_visible == FALSE)) {
+					if (bags >= 6) {
 						/* Esta bolsa crasheó al pingüino */
 						printf ("Penguin Crash\n");
 						if (vidas > 0) {
@@ -1252,38 +1288,39 @@ int game_loop (void) {
 					thisbag = nextbag;
 					continue;
 				}
-			} else if (j < 0 && thisbag->bag == 5 && next_level_visible == NO_NEXT_LEVEL) {
+			} else if (j < 0 && thisbag->bag == 5 && next_level_visible == NO_NEXT_LEVEL && thisbag->frame > 6) {
 				i = collider_hittest (colliders_hazard_block, anvil_collider_offsets[thisbag->frame][0], anvil_collider_offsets[thisbag->frame][1], colliders[k], penguinx - 120, 251);
 				
 				if (i == SDL_TRUE) {
 					bags = 7;
 					
 					/* TODO: Reproducir el sonido de golpe de yunque */
-					/* TODO: Acomodar la animación de "Crash" */
 					crash_anim = 0;
 					
 					printf ("Penguin Crash by anvil\n");
-					if (vidas > 0) {
+					if (vidas > 0 && try_visible == FALSE) {
 						try_visible = TRUE;
 						printf ("Try again visible\n");
 						animacion = 0;
 						airbone = 1000; /* El airbone bloquea que salgan más objetos */
+						printf ("Airbone: %i\n", airbone);
 						vidas--;
 						SDL_FreeSurface (vidas_p);
 						snprintf (buffer, sizeof (buffer), "%d", vidas);
 						vidas_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
-					} else {
+					} else if (try_visible == FALSE) {
 						gameover_visible = TRUE;
 						printf ("Game Over visible\n");
 					}
 					
 					anvil_out = FALSE;
 					airbone--;
+					printf ("Airbone: %i\n", airbone);
 					delete_bag (thisbag);
 					thisbag = nextbag;
 					continue;
 				}
-			} else if (j < 0 && thisbag->bag == 4 && next_level_visible == NO_NEXT_LEVEL) {
+			} else if (j < 0 && thisbag->bag == 4 && next_level_visible == NO_NEXT_LEVEL && thisbag->frame > 6 && bags < 6) {
 				i = collider_hittest (colliders[COLLIDER_ONEUP], thisbag->object_points[thisbag->frame][0], thisbag->object_points[thisbag->frame][1], colliders[k], penguinx - 120, 251);
 				
 				if (i == SDL_TRUE) {
@@ -1310,8 +1347,7 @@ int game_loop (void) {
 					
 					/* TODO: Reproducir el sonido de golpe de pescado */
 					crash_anim = 0;
-					
-					if (vidas > 0) {
+					if (vidas > 0 && try_visible == FALSE) {
 						try_visible = TRUE;
 						animacion = 0;
 						airbone = 1000; /* El airbone bloquea que salgan más objetos */
@@ -1319,7 +1355,7 @@ int game_loop (void) {
 						SDL_FreeSurface (vidas_p);
 						snprintf (buffer, sizeof (buffer), "%d", vidas);
 						vidas_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
-					} else {
+					} else if (try_visible == FALSE) {
 						gameover_visible = TRUE;
 					}
 					
@@ -1339,7 +1375,7 @@ int game_loop (void) {
 					/* TODO: Reproducir el sonido de golpe de florero */
 					crash_anim = 0;
 					
-					if (vidas > 0) {
+					if (vidas > 0 && try_visible == FALSE) {
 						try_visible = TRUE;
 						animacion = 0;
 						airbone = 1000; /* El airbone bloquea que salgan más objetos */
@@ -1347,7 +1383,7 @@ int game_loop (void) {
 						SDL_FreeSurface (vidas_p);
 						snprintf (buffer, sizeof (buffer), "%d", vidas);
 						vidas_p = draw_text_with_shadow (ttf24_klickclack, 2, buffer, blanco, negro);
-					} else {
+					} else if (try_visible == FALSE) {
 						gameover_visible = TRUE;
 					}
 					
@@ -1445,6 +1481,16 @@ int game_loop (void) {
 			SDL_BlitSurface (images[i], NULL, screen, &rect);
 		}
 		
+		if (gameover_visible == TRUE) {
+			rect.w = texts[TEXT_GAME_OVER]->w;
+			rect.h = texts[TEXT_GAME_OVER]->h;
+			
+			rect.x = 365 - (rect.w / 2);
+			rect.y = 145;
+			
+			SDL_BlitSurface (texts[TEXT_GAME_OVER], NULL, screen, &rect);
+		}
+		
 		/* Los mensajes de texto van antes de las bolsas */
 		rect.x = 30;
 		rect.y = 8;
@@ -1487,8 +1533,6 @@ int game_loop (void) {
 		rect.h = score_p->h;
 		
 		SDL_BlitSurface (score_p, NULL, screen, &rect);
-		
-		/* TODO: Dibujar el mensaje de nivel completo */
 		
 		/* Dibujar los objetos en pantalla */
 		thisbag = first_bag;
@@ -1608,13 +1652,57 @@ int game_loop (void) {
 		}
 		
 		if (try_visible == TRUE) {
+			rect.w = texts[TEXT_TRY_AGAIN]->w;
+			rect.h = texts[TEXT_TRY_AGAIN]->h;
+			rect.x = 388 - (rect.w / 2);
+			rect.y = 126;
+			
+			SDL_BlitSurface (texts[TEXT_TRY_AGAIN], NULL, screen, &rect);
+			
+			/* Poner el número 3, 2, 1 */
+			i = -1;
+			if (animacion >= 20 && animacion < 40) {
+				j = animacion - 20;
+				i = 2;
+			} else if (animacion >= 44 && animacion < 64) {
+				j = animacion - 44;
+				i = 1;
+			} else if (animacion >= 68 && animacion < 88) {
+				j = animacion - 68;
+				i = 0;
+			}
+			
+			if (i >= 0) {
+				rect.w = numbers[i][j]->w;
+				rect.h = numbers[i][j]->h;
+				rect.x = 371 - (rect.w / 2);
+				rect.y = 122 - j;
+				SDL_gfxBlitRGBAWithAlpha (numbers[i][j], NULL, screen, &rect, (255 - (12.75 * ((float) j))));
+			}
+			
 			animacion++;
-			
-			/* TODO: Dibujar el mensaje de "Intentar de nuevo" */
-			
 		}
 		
 		if (next_level_visible == NEXT_LEVEL) {
+			if (animacion < 52) {
+				/* Presentar el texto del camión descargado */
+				rect.w = texts[TEXT_UNLOADED]->w;
+				rect.h = texts[TEXT_UNLOADED]->h;
+				
+				rect.x = 388 - (rect.w / 2);
+				rect.y = 115;
+				
+				SDL_BlitSurface (texts[TEXT_UNLOADED], NULL, screen, &rect);
+			} else if (animacion > 62) {
+				rect.w = texts[TEXT_NEXT_TRUCK]->w;
+				rect.h = texts[TEXT_NEXT_TRUCK]->h;
+				
+				rect.x = 378 - (rect.w / 2);
+				rect.y = 121;
+				
+				SDL_BlitSurface (texts[TEXT_NEXT_TRUCK], NULL, screen, &rect);
+			}
+			
 			if (animacion < 36) {
 				rect.x = 568 + (198 * animacion) / 36;
 			} else if (animacion >= 36 && animacion < 60) {
@@ -1678,6 +1766,13 @@ int game_loop (void) {
 		
 	} while (!done);
 	
+	/* Liberar los números usados */
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 20; j++) {
+			SDL_FreeSurface (numbers[i][j]);
+		}
+	}
+	
 	return done;
 }
 /* Set video mode: */
@@ -1697,6 +1792,7 @@ void setup (void) {
 	char buffer_file[8192];
 	char *systemdata_path = get_systemdata_path ();
 	Collider *c;
+	TTF_Font *ttf48_klickclack, *ttf52_klickclack;
 	
 	/* Inicializar el Video SDL */
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -1839,8 +1935,11 @@ void setup (void) {
 	
 	sprintf (buffer_file, "%s%s", systemdata_path, "klickclack.ttf");
 	ttf24_klickclack = TTF_OpenFont (buffer_file, 24);
+	ttf196_klickclack = TTF_OpenFont (buffer_file, 196);
+	ttf48_klickclack = TTF_OpenFont (buffer_file, 48);
+	ttf52_klickclack = TTF_OpenFont (buffer_file, 52);
 	
-	if (!ttf24_klickclack) {
+	if (!ttf24_klickclack || !ttf196_klickclack || !ttf48_klickclack || !ttf52_klickclack) {
 		fprintf (stderr,
 			_("Failed to load font file 'Klick Clack\n"
 			"The error returned by SDL is:\n"
@@ -1856,9 +1955,17 @@ void setup (void) {
 	blanco.r = blanco.g = blanco.b = 255;
 	negro.r = negro.g = negro.b = 0;
 	
-	for (g = 0; g < NUM_TEXTS; g++) {
+	for (g = TEXT_LIVES; g <= TEXT_SCORE; g++) {
 		texts[g] = draw_text_with_shadow (ttf24_klickclack, 2, _(text_strings[g]), blanco, negro);
 	}
+	
+	texts[TEXT_TRY_AGAIN] = draw_text_with_shadow (ttf48_klickclack, 2, _(text_strings[TEXT_TRY_AGAIN]), blanco, negro);
+	texts[TEXT_UNLOADED] = draw_text_with_shadow (ttf48_klickclack, 2, _(text_strings[TEXT_UNLOADED]), blanco, negro);
+	texts[TEXT_NEXT_TRUCK] = draw_text_with_shadow (ttf48_klickclack, 2, _(text_strings[TEXT_NEXT_TRUCK]), blanco, negro);
+	texts[TEXT_GAME_OVER] = draw_text_with_shadow (ttf52_klickclack, 3, _(text_strings[TEXT_GAME_OVER]), blanco, negro);
+	
+	TTF_CloseFont (ttf48_klickclack);
+	TTF_CloseFont (ttf52_klickclack);
 }
 
 void setup_and_color_penguin (void) {

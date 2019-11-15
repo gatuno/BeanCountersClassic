@@ -134,10 +134,10 @@ SDL_Surface *draw_text_with_shadow (TTF_Font *font, int outline, const char *tex
 	}
 	
 	TTF_SetFontOutline (font, outline);
-	black_letters = TTF_RenderUTF8_Blended (font, text, background);
+	black_letters = draw_text (font, text, &background);
 	
 	TTF_SetFontOutline (font, 0);
-	white_letters = TTF_RenderUTF8_Blended (font, text, foreground);
+	white_letters = draw_text (font, text, &foreground);
 	
 	rect.w = white_letters->w; rect.h = white_letters->h;
 	rect.x = rect.y = outline;
