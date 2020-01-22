@@ -135,6 +135,10 @@ nobase_dist_gamedata_DATA = images/background.png \
 	images/crash_2.png \
 	images/crash_3.png \
 	images/crash_4.png \
+	images/gameintro.png \
+	images/penguin_intro_back.png \
+	images/penguin_intro_color.png \
+	images/penguin_intro_front.png \
 	klickclack.ttf
 
 # Instalar los archivos .desktop e iconos

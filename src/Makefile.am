@@ -10,6 +10,7 @@ bean_counters_classic_SOURCES = beans.c \
 	sdl2_rect.c sdl2_rect.h \
 	draw-text.c draw-text.h \
 	zoom.c zoom.h \
+	cp-button.c cp-button.h \
 	gettext.h
 
 if MACOSX

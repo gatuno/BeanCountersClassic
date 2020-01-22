@@ -45,6 +45,7 @@
 #include "collider.h"
 #include "draw-text.h"
 #include "zoom.h"
+#include "cp-button.h"
 
 #define FPS (1000/24)
 #define RANDOM(x) ((int) (x ## .0 * rand () / (RAND_MAX + 1.0)))
@@ -92,6 +93,12 @@ typedef struct _BeanBag {
 
 /* Enumerar las imágenes */
 enum {
+	IMG_GAMEINTRO,
+	
+	IMG_PENGUIN_INTRO_BACK,
+	IMG_PENGUIN_INTRO_COLOR,
+	IMG_PENGUIN_INTRO_FRONT,
+	
 	IMG_BACKGROUND,
 	IMG_PLATAFORM,
 	
@@ -211,6 +218,12 @@ enum {
 
 /* Los nombres de archivos */
 const char *images_names[NUM_IMAGES] = {
+	"images/gameintro.png",
+	
+	"images/penguin_intro_back.png",
+	"images/penguin_intro_color.png",
+	"images/penguin_intro_front.png",
+	
 	"images/background.png",
 	"images/plataform.png",
 	
@@ -329,6 +342,23 @@ enum {
 
 const char *sound_names[NUM_SOUNDS] = {
 	"sounds/none.wav",
+};
+
+/* Para el motor de botones */
+enum {
+	BUTTON_NONE,
+	
+	BUTTON_UI_INSTRUCTIONS,
+	BUTTON_UI_PLAY_GAME,
+	BUTTON_CLOSE,
+	
+	NUM_BUTTONS
+};
+
+enum {
+	BLANK_UP,
+	BLANK_OVER,
+	BLANK_DOWN
 };
 
 /* Codigos de salida */
@@ -485,6 +515,10 @@ enum {
 	TEXT_NEXT_TRUCK,
 	
 	TEXT_GAME_OVER,
+	
+	TEXT_TITLE_BEAN_COUNTERS,
+	TEXT_INSTRUCTIONS,
+	TEXT_PLAY_GAME,
 	
 	NUM_TEXTS
 };
@@ -885,9 +919,13 @@ const char *text_strings[NUM_TEXTS] = {
 	gettext_noop ("TRY AGAIN..."),
 	
 	gettext_noop ("TRUCK\nUNLOADED!!"),
-	gettext_noop ("NEXT TRUCK!!"),
+	gettext_noop ("NEXT  TRUCK!!"),
 	
-	gettext_noop ("Game Over!")
+	gettext_noop ("Game Over!"),
+	
+	gettext_noop ("BEAN\nCOUNTERS!"),
+	gettext_noop ("INSTRUCTIONS"),
+	gettext_noop ("PLAY GAME!"),
 };
 
 /* Prototipos de función */
@@ -899,6 +937,7 @@ SDL_Surface * set_video_mode (unsigned flags);
 void setup_and_color_penguin (void);
 void add_bag (int tipo);
 void delete_bag (BeanBag *p);
+int map_button_in_intro (int x, int y);
 
 /* Variables globales */
 SDL_Surface * screen;
@@ -932,8 +971,17 @@ int main (int argc, char *argv[]) {
 	
 	setup ();
 	bind_textdomain_codeset (PACKAGE, "UTF-8");
+	
+	/* Registrar botones */
+	cp_registrar_botones (NUM_BUTTONS);
+	cp_registrar_boton (BUTTON_UI_INSTRUCTIONS, BLANK_UP);
+	cp_registrar_boton (BUTTON_UI_PLAY_GAME, BLANK_UP);
+	//cp_registrar_boton (BUTTON_CLOSE, IMG_BUTTON_1_UP);
+	
+	cp_button_start ();
+	
 	do {
-		//if (game_intro () == GAME_QUIT) break;
+		if (game_intro () == GAME_QUIT) break;
 		if (game_loop () == GAME_QUIT) break;
 		//if (game_finish () == GAME_QUIT) break;
 	} while (1 == 0);
@@ -942,20 +990,101 @@ int main (int argc, char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-#if 0
 int game_intro (void) {
 	int done = 0;
 	SDL_Event event;
 	SDLKey key;
 	SDL_Rect rect;
+	int map;
 	Uint32 last_time, now_time;
+	SDL_Surface *color_surface;
+	SDL_Rect update_rects[6];
+	int num_rects;
+	
+	Uint32 color, blanco2;
+	SDL_Surface *trans;
+	
+	color = SDL_MapRGB (screen->format, 255, 255, 255);
+	trans = SDL_CreateRGBSurface (SDL_SWSURFACE | SDL_SRCALPHA, 246, 24, 32, RMASK, GMASK, BMASK, AMASK);
+	blanco2 = SDL_MapRGBA (trans->format, 255, 255, 255, 128);
+	SDL_FillRect (trans, NULL, blanco2); /* Blanco */
+	
+	/* Precolorear el cuerpo del pingüino */
+	color_surface = SDL_CreateRGBSurface (SDL_SWSURFACE, images[IMG_PENGUIN_INTRO_COLOR]->w, images[IMG_PENGUIN_INTRO_COLOR]->h, 32, RMASK, GMASK, BMASK, AMASK);
+	SDL_FillRect (color_surface, NULL, SDL_MapRGB (color_surface->format, penguin_colors[color_penguin].r, penguin_colors[color_penguin].g, penguin_colors[color_penguin].b));
+	
+	SDL_BlitSurface (color_surface, NULL, images[IMG_PENGUIN_INTRO_COLOR], NULL);
+	
+	SDL_FreeSurface (color_surface);
 	
 	/* Predibujar todo */
-	SDL_FillRect (screen, NULL, 0);
+	SDL_BlitSurface (images[IMG_BACKGROUND], NULL, screen, NULL);
+
+	/* Dibujar la plataforma */
+	rect.x = 0;
+	rect.y = 355;
+	rect.w = images[IMG_PLATAFORM]->w;
+	rect.h = images[IMG_PLATAFORM]->h;
+	
+	SDL_BlitSurface (images[IMG_PLATAFORM], NULL, screen, &rect);
+	
+	/* Dibujar el game intro */
+	rect.x = 113;
+	rect.y = 35;
+	rect.w = images[IMG_GAMEINTRO]->w;
+	rect.h = images[IMG_GAMEINTRO]->h;
+	
+	SDL_BlitSurface (images[IMG_GAMEINTRO], NULL, screen, &rect);
+	
+	/* Dibujar el pingüino */
+	rect.x = 127;
+	rect.y = 68;
+	rect.w = images[IMG_PENGUIN_INTRO_BACK]->w;
+	rect.h = images[IMG_PENGUIN_INTRO_BACK]->h;
+	
+	SDL_BlitSurface (images[IMG_PENGUIN_INTRO_BACK], NULL, screen, &rect);
+	
+	rect.x = 134;
+	rect.y = 162;
+	rect.w = images[IMG_PENGUIN_INTRO_COLOR]->w;
+	rect.h = images[IMG_PENGUIN_INTRO_COLOR]->h;
+	
+	SDL_BlitSurface (images[IMG_PENGUIN_INTRO_COLOR], NULL, screen, &rect);
+	
+	rect.x = 157;
+	rect.y = 239;
+	rect.w = images[IMG_PENGUIN_INTRO_FRONT]->w;
+	rect.h = images[IMG_PENGUIN_INTRO_FRONT]->h;
+	
+	SDL_BlitSurface (images[IMG_PENGUIN_INTRO_FRONT], NULL, screen, &rect);
+	
+	/* Dibujar el título */
+	rect.w = texts[TEXT_TITLE_BEAN_COUNTERS]->w;
+	rect.h = texts[TEXT_TITLE_BEAN_COUNTERS]->h;
+	rect.x = 504 - (rect.w / 2);
+	rect.y = 92;
+	
+	SDL_BlitSurface (texts[TEXT_TITLE_BEAN_COUNTERS], NULL, screen, &rect);
+	
+	rect.w = texts[TEXT_INSTRUCTIONS]->w;
+	rect.h = texts[TEXT_INSTRUCTIONS]->h;
+	rect.x = 504 - (rect.w / 2);
+	rect.y = 327;
+	
+	SDL_BlitSurface (texts[TEXT_INSTRUCTIONS], NULL, screen, &rect);
+	
+	rect.w = texts[TEXT_PLAY_GAME]->w;
+	rect.h = texts[TEXT_PLAY_GAME]->h;
+	rect.x = 504 - (rect.w / 2);
+	rect.y = 383;
+	
+	SDL_BlitSurface (texts[TEXT_PLAY_GAME], NULL, screen, &rect);
+	
 	SDL_Flip (screen);
 	
 	do {
 		last_time = SDL_GetTicks ();
+		num_rects = 0;
 		
 		while (SDL_PollEvent(&event) > 0) {
 			switch (event.type) {
@@ -964,10 +1093,25 @@ int game_intro (void) {
 					done = GAME_QUIT;
 					break;
 				case SDL_MOUSEMOTION:
+					map = map_button_in_intro (event.motion.x, event.motion.y);
+					cp_button_motion (map);
 					break;
 				case SDL_MOUSEBUTTONDOWN:
+					map = map_button_in_intro (event.button.x, event.button.y);
+					cp_button_down (map);
 					break;
 				case SDL_MOUSEBUTTONUP:
+					map = map_button_in_intro (event.button.x, event.button.y);
+					map = cp_button_up (map);
+					
+					switch (map) {
+						case BUTTON_UI_INSTRUCTIONS:
+							done = GAME_CONTINUE;
+							break;
+						case BUTTON_UI_PLAY_GAME:
+							done = GAME_CONTINUE;
+							break;
+					}
 					break;
 				case SDL_KEYDOWN:
 					/* Tengo una tecla presionada */
@@ -983,7 +1127,59 @@ int game_intro (void) {
 			}
 		}
 		
-		SDL_Flip (screen);
+		if (cp_button_refresh[BUTTON_UI_INSTRUCTIONS]) {
+			rect.x = 381; rect.y = 327;
+			rect.w = 246; rect.h = 24;
+			SDL_FillRect (screen, &rect, color);
+			update_rects[num_rects++] = rect;
+			
+			rect.w = texts[TEXT_INSTRUCTIONS]->w;
+			rect.h = texts[TEXT_INSTRUCTIONS]->h;
+			rect.x = 504 - (rect.w / 2);
+			rect.y = 327;
+	
+			SDL_BlitSurface (texts[TEXT_INSTRUCTIONS], NULL, screen, &rect);
+			
+			if (cp_button_frames[BUTTON_UI_INSTRUCTIONS] != BLANK_UP) {
+				rect.x = 381;
+				rect.y = 327;
+				rect.w = 246;
+				rect.h = 24;
+				
+				SDL_BlitSurface (trans, NULL, screen, &rect);
+			}
+			
+			cp_button_refresh[BUTTON_UI_INSTRUCTIONS] = 0;
+		}
+		
+		if (cp_button_refresh[BUTTON_UI_PLAY_GAME]) {
+			rect.x = 381; rect.y = 383;
+			rect.w = 246; rect.h = 24;
+			SDL_FillRect (screen, &rect, color);
+			update_rects[num_rects++] = rect;
+			
+			rect.w = texts[TEXT_PLAY_GAME]->w;
+			rect.h = texts[TEXT_PLAY_GAME]->h;
+			rect.x = 504 - (rect.w / 2);
+			rect.y = 383;
+	
+			SDL_BlitSurface (texts[TEXT_PLAY_GAME], NULL, screen, &rect);
+			
+			if (cp_button_frames[BUTTON_UI_PLAY_GAME] != BLANK_UP) {
+				rect.x = 381;
+				rect.y = 383;
+				rect.w = 246;
+				rect.h = 24;
+				
+				SDL_BlitSurface (trans, NULL, screen, &rect);
+			}
+			
+			cp_button_refresh[BUTTON_UI_PLAY_GAME] = 0;
+		}
+		
+		SDL_UpdateRects (screen, num_rects, update_rects);
+		
+		//SDL_Flip (screen);
 		
 		now_time = SDL_GetTicks ();
 		if (now_time < last_time + FPS) SDL_Delay(last_time + FPS - now_time);
@@ -993,6 +1189,7 @@ int game_intro (void) {
 	return done;
 }
 
+#if 0
 int game_finish (void) {
 	int done = 0;
 	SDL_Event event;
@@ -1792,7 +1989,7 @@ void setup (void) {
 	char buffer_file[8192];
 	char *systemdata_path = get_systemdata_path ();
 	Collider *c;
-	TTF_Font *ttf48_klickclack, *ttf52_klickclack;
+	TTF_Font *ttf48_klickclack, *ttf52_klickclack, *ttf40_klickclack;
 	
 	/* Inicializar el Video SDL */
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -1937,9 +2134,10 @@ void setup (void) {
 	ttf24_klickclack = TTF_OpenFont (buffer_file, 24);
 	ttf196_klickclack = TTF_OpenFont (buffer_file, 196);
 	ttf48_klickclack = TTF_OpenFont (buffer_file, 48);
+	ttf40_klickclack = TTF_OpenFont (buffer_file, 40);
 	ttf52_klickclack = TTF_OpenFont (buffer_file, 52);
 	
-	if (!ttf24_klickclack || !ttf196_klickclack || !ttf48_klickclack || !ttf52_klickclack) {
+	if (!ttf24_klickclack || !ttf196_klickclack || !ttf48_klickclack || !ttf52_klickclack || !ttf40_klickclack) {
 		fprintf (stderr,
 			_("Failed to load font file 'Klick Clack\n"
 			"The error returned by SDL is:\n"
@@ -1951,9 +2149,12 @@ void setup (void) {
 	// TODO: Favor de manejar correctamente el bind_textdomain_codeset
 	bind_textdomain_codeset (PACKAGE, "UTF-8");
 	
-	SDL_Color negro, blanco;
+	SDL_Color negro, blanco, azul1;
 	blanco.r = blanco.g = blanco.b = 255;
 	negro.r = negro.g = negro.b = 0;
+	azul1.r = 0x01;
+	azul1.g = 0x34;
+	azul1.b = 0x9a;
 	
 	for (g = TEXT_LIVES; g <= TEXT_SCORE; g++) {
 		texts[g] = draw_text_with_shadow (ttf24_klickclack, 2, _(text_strings[g]), blanco, negro);
@@ -1964,8 +2165,13 @@ void setup (void) {
 	texts[TEXT_NEXT_TRUCK] = draw_text_with_shadow (ttf48_klickclack, 2, _(text_strings[TEXT_NEXT_TRUCK]), blanco, negro);
 	texts[TEXT_GAME_OVER] = draw_text_with_shadow (ttf52_klickclack, 3, _(text_strings[TEXT_GAME_OVER]), blanco, negro);
 	
+	texts[TEXT_TITLE_BEAN_COUNTERS] = draw_text (ttf40_klickclack, _(text_strings[TEXT_TITLE_BEAN_COUNTERS]), &azul1);
+	texts[TEXT_INSTRUCTIONS] = draw_text (ttf24_klickclack, _(text_strings[TEXT_INSTRUCTIONS]), &azul1);
+	texts[TEXT_PLAY_GAME] = draw_text (ttf24_klickclack, _(text_strings[TEXT_PLAY_GAME]), &azul1);
+	
 	TTF_CloseFont (ttf48_klickclack);
 	TTF_CloseFont (ttf52_klickclack);
+	TTF_CloseFont (ttf40_klickclack);
 }
 
 void setup_and_color_penguin (void) {
@@ -2180,3 +2386,10 @@ void delete_bag (BeanBag *p) {
 	
 	free (p);
 }
+
+int map_button_in_intro (int x, int y) {
+	if (x >= 381 && x < 627 && y >= 324 && y < 348) return BUTTON_UI_INSTRUCTIONS;
+	if (x >= 381 && x < 627 && y >= 380 && y < 404) return BUTTON_UI_PLAY_GAME;
+	return BUTTON_NONE;
+}
+

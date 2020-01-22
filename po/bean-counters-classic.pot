@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: bean-counters-classic 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-13 13:45-0500\n"
+"POT-Creation-Date: 2020-01-21 08:36-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,19 +17,51 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/beans.c:872
+#: src/beans.c:915
 msgid "LIVES:"
 msgstr ""
 
-#: src/beans.c:873
+#: src/beans.c:916
 msgid "TRUCK:"
 msgstr ""
 
-#: src/beans.c:874
+#: src/beans.c:917
 msgid "SCORE:"
 msgstr ""
 
-#: src/beans.c:1732
+#: src/beans.c:919
+msgid "TRY AGAIN..."
+msgstr ""
+
+#: src/beans.c:921
+msgid ""
+"TRUCK\n"
+"UNLOADED!!"
+msgstr ""
+
+#: src/beans.c:922
+msgid "NEXT  TRUCK!!"
+msgstr ""
+
+#: src/beans.c:924
+msgid "Game Over!"
+msgstr ""
+
+#: src/beans.c:926
+msgid ""
+"BEAN\n"
+"COUNTERS!"
+msgstr ""
+
+#: src/beans.c:927
+msgid "INSTRUCTIONS"
+msgstr ""
+
+#: src/beans.c:928
+msgid "PLAY GAME!"
+msgstr ""
+
+#: src/beans.c:2024
 #, c-format
 msgid ""
 "Error: Can't initialize the video subsystem\n"
@@ -37,11 +69,11 @@ msgid ""
 "%s\n"
 msgstr ""
 
-#: src/beans.c:1743
+#: src/beans.c:2035
 msgid "Bean Counters Classic"
 msgstr ""
 
-#: src/beans.c:1750
+#: src/beans.c:2042
 #, c-format
 msgid ""
 "Error: Can't setup 760x480 video mode.\n"
@@ -49,19 +81,19 @@ msgid ""
 "%s\n"
 msgstr ""
 
-#: src/beans.c:1759
+#: src/beans.c:2051
 #, c-format
 msgid ""
 "Warning: Can't initialize the audio subsystem\n"
 "Continuing...\n"
 msgstr ""
 
-#: src/beans.c:1768
+#: src/beans.c:2060
 #, c-format
 msgid "Warning: Can't initialize the SDL Mixer library\n"
 msgstr ""
 
-#: src/beans.c:1779 src/beans.c:1906
+#: src/beans.c:2071 src/beans.c:2218
 #, c-format
 msgid ""
 "Failed to load data file:\n"
@@ -70,21 +102,21 @@ msgid ""
 "%s\n"
 msgstr ""
 
-#: src/beans.c:1806
+#: src/beans.c:2098
 #, c-format
 msgid ""
 "Failed to load data file:\n"
 "%s\n"
 msgstr ""
 
-#: src/beans.c:1862
+#: src/beans.c:2154
 #, c-format
 msgid ""
 "Error: Can't initialize the SDL TTF library\n"
 "%s\n"
 msgstr ""
 
-#: src/beans.c:1873
+#: src/beans.c:2169
 #, c-format
 msgid ""
 "Failed to load font file 'Klick Clack\n"
