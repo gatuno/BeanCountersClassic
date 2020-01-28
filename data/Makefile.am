@@ -139,7 +139,11 @@ nobase_dist_gamedata_DATA = images/background.png \
 	images/penguin_intro_back.png \
 	images/penguin_intro_color.png \
 	images/penguin_intro_front.png \
-	klickclack.ttf
+	images/intro_plataform.png \
+	images/left.png \
+	images/right.png \
+	klickclack.ttf \
+	burbanks.ttf
 
 # Instalar los archivos .desktop e iconos
 applicationsdir = $(datadir)/applications

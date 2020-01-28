@@ -99,6 +99,8 @@ enum {
 	IMG_PENGUIN_INTRO_COLOR,
 	IMG_PENGUIN_INTRO_FRONT,
 	
+	IMG_INTRO_PLATAFORM,
+	
 	IMG_BACKGROUND,
 	IMG_PLATAFORM,
 	
@@ -213,6 +215,9 @@ enum {
 	IMG_CRASH_3,
 	IMG_CRASH_4,
 	
+	IMG_LEFT,
+	IMG_RIGHT,
+	
 	NUM_IMAGES
 };
 
@@ -223,6 +228,8 @@ const char *images_names[NUM_IMAGES] = {
 	"images/penguin_intro_back.png",
 	"images/penguin_intro_color.png",
 	"images/penguin_intro_front.png",
+	
+	"images/intro_plataform.png",
 	
 	"images/background.png",
 	"images/plataform.png",
@@ -331,7 +338,10 @@ const char *images_names[NUM_IMAGES] = {
 	"images/crash_1.png",
 	"images/crash_2.png",
 	"images/crash_3.png",
-	"images/crash_4.png"
+	"images/crash_4.png",
+	
+	"images/left.png",
+	"images/right.png",
 };
 
 enum {
@@ -351,6 +361,9 @@ enum {
 	BUTTON_UI_INSTRUCTIONS,
 	BUTTON_UI_PLAY_GAME,
 	BUTTON_CLOSE,
+	
+	BUTTON_NEXT_PAGE,
+	BUTTON_EXPLAIN_PLAY_GAME,
 	
 	NUM_BUTTONS
 };
@@ -519,6 +532,14 @@ enum {
 	TEXT_TITLE_BEAN_COUNTERS,
 	TEXT_INSTRUCTIONS,
 	TEXT_PLAY_GAME,
+	TEXT_NEXT_PAGE,
+	
+	TEXT_CONTROLS,
+	
+	TEXT_EXPLAIN_1,
+	TEXT_EXPLAIN_2,
+	TEXT_EXPLAIN_3,
+	TEXT_EXPLAIN_4,
 	
 	NUM_TEXTS
 };
@@ -926,11 +947,21 @@ const char *text_strings[NUM_TEXTS] = {
 	gettext_noop ("BEAN\nCOUNTERS!"),
 	gettext_noop ("INSTRUCTIONS"),
 	gettext_noop ("PLAY GAME!"),
+	
+	gettext_noop ("NEXT PAGE"),
+	
+	gettext_noop ("CONTROLS:"),
+	
+	gettext_noop ("The Coffee Shop is out of coffee! They need more coffee\nbeans, and you can help! Bags of coffee beans will be\ntossed out of the back of the van. You must catch them\nand stack them in the red plataform."),
+	gettext_noop ("You can hold more than one bag at a time, but watch out!\nIf you hold too many bags at once, they'll be too heavy for\nyou to carry! Every bag you deposit adds points. The more\npoints you have in the end, the more coins you'll get."),
+	gettext_noop ("Move mouse left and right to move penguin."),
+	gettext_noop ("Click left mouse button when at the red platform to\ndrop off bags (if you have any)."),
 };
 
 /* Prototipos de función */
 int game_intro (void);
 int game_loop (void);
+int game_explain (void);
 int game_finish (void);
 void setup (void);
 SDL_Surface * set_video_mode (unsigned flags);
@@ -938,6 +969,7 @@ void setup_and_color_penguin (void);
 void add_bag (int tipo);
 void delete_bag (BeanBag *p);
 int map_button_in_intro (int x, int y);
+int map_button_in_explain (int x, int y, int escena);
 
 /* Variables globales */
 SDL_Surface * screen;
@@ -976,7 +1008,8 @@ int main (int argc, char *argv[]) {
 	cp_registrar_botones (NUM_BUTTONS);
 	cp_registrar_boton (BUTTON_UI_INSTRUCTIONS, BLANK_UP);
 	cp_registrar_boton (BUTTON_UI_PLAY_GAME, BLANK_UP);
-	//cp_registrar_boton (BUTTON_CLOSE, IMG_BUTTON_1_UP);
+	cp_registrar_boton (BUTTON_NEXT_PAGE, BLANK_UP);
+	cp_registrar_boton (BUTTON_EXPLAIN_PLAY_GAME, BLANK_UP);
 	
 	cp_button_start ();
 	
@@ -1003,6 +1036,7 @@ int game_intro (void) {
 	
 	Uint32 color, blanco2;
 	SDL_Surface *trans;
+	int explain = 0;
 	
 	color = SDL_MapRGB (screen->format, 255, 255, 255);
 	trans = SDL_CreateRGBSurface (SDL_SWSURFACE | SDL_SRCALPHA, 246, 24, 32, RMASK, GMASK, BMASK, AMASK);
@@ -1107,6 +1141,7 @@ int game_intro (void) {
 					switch (map) {
 						case BUTTON_UI_INSTRUCTIONS:
 							done = GAME_CONTINUE;
+							explain = 1;
 							break;
 						case BUTTON_UI_PLAY_GAME:
 							done = GAME_CONTINUE;
@@ -1185,6 +1220,324 @@ int game_intro (void) {
 		if (now_time < last_time + FPS) SDL_Delay(last_time + FPS - now_time);
 		
 	} while (!done);
+	
+	SDL_FreeSurface (trans);
+	
+	if (explain) {
+		done = game_explain ();
+	}
+		
+	return done;
+}
+
+int game_explain (void) {
+	int done = 0;
+	SDL_Event event;
+	SDLKey key;
+	SDL_Rect rect;
+	Uint32 last_time, now_time;
+	
+	SDL_Rect update_rects[6];
+	int num_rects;
+	int escena = 0;
+	int cambiar_escena = 0;
+	int map;
+	int g;
+	int shake_frame;
+	
+	Uint32 color, blanco2;
+	SDL_Surface *trans1, *trans2, *mini_p, *mini_bag, *mini_shake[6];
+	
+	color = SDL_MapRGB (screen->format, 255, 255, 255);
+	trans1 = SDL_CreateRGBSurface (SDL_SWSURFACE | SDL_SRCALPHA, texts[TEXT_NEXT_PAGE]->w, texts[TEXT_NEXT_PAGE]->h, 32, RMASK, GMASK, BMASK, AMASK);
+	trans2 = SDL_CreateRGBSurface (SDL_SWSURFACE | SDL_SRCALPHA, texts[TEXT_PLAY_GAME]->w, texts[TEXT_PLAY_GAME]->h, 32, RMASK, GMASK, BMASK, AMASK);
+	blanco2 = SDL_MapRGBA (trans1->format, 255, 255, 255, 128);
+	SDL_FillRect (trans1, NULL, blanco2); /* Blanco */
+	SDL_FillRect (trans2, NULL, blanco2); /* Blanco */
+	
+	mini_p = zoomSurface (penguin_images [PENGUIN_FRAME_1], 0.7654, 0.7654, 1);
+	mini_bag = zoomSurface (images[IMG_BAG_3], 0.7596, 0.7596, 1);
+	for (g = PENGUIN_FRAME_6_1; g <= PENGUIN_FRAME_6_6; g++) {
+		mini_shake[g - PENGUIN_FRAME_6_1] = zoomSurface (penguin_images[g], 0.7654, 0.7654, 1);
+	}
+	
+	/* Predibujar todo */
+	SDL_BlitSurface (images[IMG_BACKGROUND], NULL, screen, NULL);
+
+	/* Dibujar la plataforma */
+	rect.x = 0;
+	rect.y = 355;
+	rect.w = images[IMG_PLATAFORM]->w;
+	rect.h = images[IMG_PLATAFORM]->h;
+	
+	SDL_BlitSurface (images[IMG_PLATAFORM], NULL, screen, &rect);
+	
+	/* Dibujar el game intro */
+	rect.x = 113;
+	rect.y = 35;
+	rect.w = images[IMG_GAMEINTRO]->w;
+	rect.h = images[IMG_GAMEINTRO]->h;
+	
+	SDL_BlitSurface (images[IMG_GAMEINTRO], NULL, screen, &rect);
+	
+	rect.x = 139;
+	rect.y = 319;
+	rect.w = images[IMG_INTRO_PLATAFORM]->w;
+	rect.h = images[IMG_INTRO_PLATAFORM]->h;
+	
+	SDL_BlitSurface (images[IMG_INTRO_PLATAFORM], NULL, screen, &rect);
+	
+	rect.x = 282;
+	rect.y = 274;
+	rect.w = mini_p->w;
+	rect.h = mini_p->h;
+	
+	SDL_BlitSurface (mini_p, NULL, screen, &rect);
+	
+	rect.x = 396;
+	rect.y = 262;
+	rect.w = mini_bag->w;
+	rect.h = mini_bag->h;
+	
+	SDL_BlitSurface (mini_bag, NULL, screen, &rect);
+	
+	rect.x = 470;
+	rect.y = 342;
+	rect.w = texts[TEXT_NEXT_PAGE]->w;
+	rect.h = texts[TEXT_NEXT_PAGE]->h;
+	
+	SDL_BlitSurface (texts[TEXT_NEXT_PAGE], NULL, screen, &rect);
+	
+	rect.w = texts[TEXT_EXPLAIN_1]->w;
+	rect.h = texts[TEXT_EXPLAIN_1]->h;
+	rect.x = 113 + (images[IMG_GAMEINTRO]->w - rect.w) / 2;
+	rect.y = 85;
+	
+	SDL_BlitSurface (texts[TEXT_EXPLAIN_1], NULL, screen, &rect);
+	
+	SDL_Flip (screen);
+	
+	do {
+		last_time = SDL_GetTicks ();
+		num_rects = 0;
+		
+		while (SDL_PollEvent(&event) > 0) {
+			/* fprintf (stdout, "Evento: %i\n", event.type);*/
+			switch (event.type) {
+				case SDL_QUIT:
+					/* Vamos a cerrar la aplicación */
+					done = GAME_QUIT;
+					break;
+				case SDL_MOUSEMOTION:
+					map = map_button_in_explain (event.motion.x, event.motion.y, escena);
+					cp_button_motion (map);
+					break;
+				case SDL_MOUSEBUTTONDOWN:
+					map = map_button_in_explain (event.button.x, event.button.y, escena);
+					cp_button_down (map);
+					break;
+				case SDL_MOUSEBUTTONUP:
+					map = map_button_in_explain (event.button.x, event.button.y, escena);
+					map = cp_button_up (map);
+					
+					switch (map) {
+						case BUTTON_NEXT_PAGE:
+							escena++;
+							cambiar_escena = 1;
+							break;
+						case BUTTON_EXPLAIN_PLAY_GAME:
+							done = 1;
+							break;
+					}
+					break;
+				case SDL_KEYDOWN:
+					/* Tengo una tecla presionada */
+					key = event.key.keysym.sym;
+					
+					if (key == SDLK_F11 || (key == SDLK_RETURN && (event.key.keysym.mod & KMOD_ALT))) {
+						SDL_WM_ToggleFullScreen (screen);
+					}
+					if (key == SDLK_ESCAPE) {
+						done = GAME_QUIT;
+					}
+					break;
+			}
+		}
+		
+		if (cambiar_escena) {
+			rect.x = 123;
+			rect.y = 45;
+			rect.w = images[IMG_GAMEINTRO]->w - 20;
+			rect.h = images[IMG_GAMEINTRO]->h - 20;
+			
+			SDL_FillRect (screen, &rect, color);
+			update_rects[num_rects++] = rect;
+			
+			/* Redibujar la escena */
+			if (escena == 1) {
+				/* TODO: Poner el texto nuevo */
+				rect.w = texts[TEXT_EXPLAIN_2]->w;
+				rect.h = texts[TEXT_EXPLAIN_2]->h;
+				rect.x = 113 + (images[IMG_GAMEINTRO]->w - rect.w) / 2;
+				rect.y = 85;
+	
+				SDL_BlitSurface (texts[TEXT_EXPLAIN_2], NULL, screen, &rect);
+				
+				shake_frame = 0;
+			} else if (escena == 2) {
+				rect.w = texts[TEXT_CONTROLS]->w;
+				rect.h = texts[TEXT_CONTROLS]->h;
+				rect.x = 113 + (images[IMG_GAMEINTRO]->w - rect.w) / 2;
+				rect.y = 65;
+	
+				SDL_BlitSurface (texts[TEXT_CONTROLS], NULL, screen, &rect);
+				
+				/* El texto de "mover" */
+				rect.w = texts[TEXT_EXPLAIN_3]->w;
+				rect.h = texts[TEXT_EXPLAIN_3]->h;
+				rect.x = 113 + (images[IMG_GAMEINTRO]->w - rect.w) / 2;
+				rect.y = 115;
+	
+				SDL_BlitSurface (texts[TEXT_EXPLAIN_3], NULL, screen, &rect);
+				
+				/* Dibujar el pinguino y las flechas */
+				rect.x = 295;
+				rect.y = 134;
+				rect.w = mini_p->w;
+				rect.h = mini_p->h;
+	
+				SDL_BlitSurface (mini_p, NULL, screen, &rect);
+				
+				rect.x = 283;
+				rect.y = 195;
+				rect.w = images[IMG_LEFT]->w;
+				rect.h = images[IMG_LEFT]->h;
+				
+				SDL_BlitSurface (images[IMG_LEFT], NULL, screen, &rect);
+				
+				rect.x = 434;
+				rect.y = 195;
+				rect.w = images[IMG_RIGHT]->w;
+				rect.h = images[IMG_RIGHT]->h;
+				
+				SDL_BlitSurface (images[IMG_RIGHT], NULL, screen, &rect);
+				
+				/* El texto de "mover" */
+				rect.w = texts[TEXT_EXPLAIN_4]->w;
+				rect.h = texts[TEXT_EXPLAIN_4]->h;
+				rect.x = 113 + (images[IMG_GAMEINTRO]->w - rect.w) / 2;
+				rect.y = 286;
+	
+				SDL_BlitSurface (texts[TEXT_EXPLAIN_4], NULL, screen, &rect);
+				
+				/* Forzar el dibujado del botón de jugar */
+				cp_button_refresh[BUTTON_EXPLAIN_PLAY_GAME] = 1;
+			}
+			
+			cambiar_escena = 0;
+		}
+		
+		if (escena == 1) {
+			/* Borrar */
+			rect.x = 139;
+			rect.y = 270;
+			rect.w = 498;
+			rect.h = 122 + 50;
+			
+			SDL_FillRect (screen, &rect, color);
+			update_rects[num_rects++] = rect;
+			
+			/* Redibujar la plataforma y con el pinguino */
+			rect.x = 139;
+			rect.y = 319;
+			rect.w = images[IMG_INTRO_PLATAFORM]->w;
+			rect.h = images[IMG_INTRO_PLATAFORM]->h;
+			
+			SDL_BlitSurface (images[IMG_INTRO_PLATAFORM], NULL, screen, &rect);
+			
+			rect.x = 282;
+			rect.y = 274;
+			rect.w = mini_shake[shake_frame / 2]->w;
+			rect.h = mini_shake[shake_frame / 2]->h;
+			
+			SDL_BlitSurface (mini_shake[shake_frame / 2], NULL, screen, &rect);
+			
+			shake_frame++;
+			if (shake_frame >= 12) shake_frame = 0;
+			
+			/* Forzar a que se redibuje el boton de página siguiente */
+			cp_button_refresh[BUTTON_NEXT_PAGE] = 1;
+		}
+		
+		if (escena < 2 && cp_button_refresh[BUTTON_NEXT_PAGE]) {
+			rect.x = 470;
+			rect.y = 342;
+			rect.w = texts[TEXT_NEXT_PAGE]->w;
+			rect.h = texts[TEXT_NEXT_PAGE]->h;
+			SDL_FillRect (screen, &rect, color);
+			update_rects[num_rects++] = rect;
+			
+			rect.x = 470;
+			rect.y = 342;
+			rect.w = texts[TEXT_NEXT_PAGE]->w;
+			rect.h = texts[TEXT_NEXT_PAGE]->h;
+	
+			SDL_BlitSurface (texts[TEXT_NEXT_PAGE], NULL, screen, &rect);
+			
+			if (cp_button_frames[BUTTON_NEXT_PAGE] != BLANK_UP) {
+				rect.x = 470;
+				rect.y = 342;
+				rect.w = texts[TEXT_NEXT_PAGE]->w;
+				rect.h = texts[TEXT_NEXT_PAGE]->h;
+				
+				SDL_BlitSurface (trans1, NULL, screen, &rect);
+			}
+			
+			cp_button_refresh[BUTTON_NEXT_PAGE] = 0;
+		}
+		
+		if (escena == 2 && cp_button_refresh[BUTTON_EXPLAIN_PLAY_GAME]) {
+			rect.w = texts[TEXT_PLAY_GAME]->w;
+			rect.h = texts[TEXT_PLAY_GAME]->h;
+			rect.x = 386 - (rect.w / 2);
+			rect.y = 383;
+			SDL_FillRect (screen, &rect, color);
+			update_rects[num_rects++] = rect;
+			
+			rect.w = texts[TEXT_PLAY_GAME]->w;
+			rect.h = texts[TEXT_PLAY_GAME]->h;
+			rect.x = 386 - (rect.w / 2);
+			rect.y = 383;
+	
+			SDL_BlitSurface (texts[TEXT_PLAY_GAME], NULL, screen, &rect);
+			
+			if (cp_button_frames[BUTTON_EXPLAIN_PLAY_GAME] != BLANK_UP) {
+				rect.w = texts[TEXT_PLAY_GAME]->w;
+				rect.h = texts[TEXT_PLAY_GAME]->h;
+				rect.x = 386 - (rect.w / 2);
+				rect.y = 383;
+				
+				SDL_BlitSurface (trans2, NULL, screen, &rect);
+			}
+			
+			cp_button_refresh[BUTTON_EXPLAIN_PLAY_GAME] = 0;
+		}
+		
+		SDL_UpdateRects (screen, num_rects, update_rects);
+		
+		now_time = SDL_GetTicks ();
+		if (now_time < last_time + FPS) SDL_Delay(last_time + FPS - now_time);
+		
+	} while (!done);
+	
+	SDL_FreeSurface (trans1);
+	SDL_FreeSurface (trans2);
+	SDL_FreeSurface (mini_p);
+	SDL_FreeSurface (mini_bag);
+	
+	for (g = 0; g < 6; g++) {
+		SDL_FreeSurface (mini_shake [g]);
+	}
 	
 	return done;
 }
@@ -1364,25 +1717,6 @@ int game_loop (void) {
 					if (key == SDLK_ESCAPE) {
 						done = GAME_QUIT;
 					}
-					/*if (key == SDLK_a) {
-						if (bags < 9) {
-							bags++;
-							penguin_frame = 0;
-						}
-					} else if (key == SDLK_s) {
-						if (bags > 0) {
-							bags--;
-							penguin_frame = 0;
-						}
-					} else if (key == SDLK_q) {
-						add_bag (0);
-					} else if (key == SDLK_w) {
-						add_bag (1);
-					} else if (key == SDLK_e) {
-						add_bag (2);
-					} else if (key == SDLK_r) {
-						add_bag (3);
-					}*/
 					break;
 			}
 		}
@@ -1989,7 +2323,7 @@ void setup (void) {
 	char buffer_file[8192];
 	char *systemdata_path = get_systemdata_path ();
 	Collider *c;
-	TTF_Font *ttf48_klickclack, *ttf52_klickclack, *ttf40_klickclack;
+	TTF_Font *ttf48_klickclack, *ttf52_klickclack, *ttf40_klickclack, *ttf18_burbank;
 	
 	/* Inicializar el Video SDL */
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -2146,7 +2480,18 @@ void setup (void) {
 		exit (1);
 	}
 	
-	// TODO: Favor de manejar correctamente el bind_textdomain_codeset
+	sprintf (buffer_file, "%s%s", systemdata_path, "burbanks.ttf");
+	ttf18_burbank = TTF_OpenFont (buffer_file, 18);
+	
+	if (!ttf18_burbank) {
+		fprintf (stderr,
+			_("Failed to load font file 'Burbank Small\n"
+			"The error returned by SDL is:\n"
+			"%s\n"), TTF_GetError ());
+		SDL_Quit ();
+		exit (1);
+	}
+	
 	bind_textdomain_codeset (PACKAGE, "UTF-8");
 	
 	SDL_Color negro, blanco, azul1;
@@ -2168,7 +2513,14 @@ void setup (void) {
 	texts[TEXT_TITLE_BEAN_COUNTERS] = draw_text (ttf40_klickclack, _(text_strings[TEXT_TITLE_BEAN_COUNTERS]), &azul1);
 	texts[TEXT_INSTRUCTIONS] = draw_text (ttf24_klickclack, _(text_strings[TEXT_INSTRUCTIONS]), &azul1);
 	texts[TEXT_PLAY_GAME] = draw_text (ttf24_klickclack, _(text_strings[TEXT_PLAY_GAME]), &azul1);
+	texts[TEXT_NEXT_PAGE] = draw_text (ttf24_klickclack, _(text_strings[TEXT_NEXT_PAGE]), &azul1);
+	texts[TEXT_CONTROLS] = draw_text (ttf40_klickclack, _(text_strings[TEXT_CONTROLS]), &azul1);
+	texts[TEXT_EXPLAIN_1] = draw_text (ttf18_burbank, _(text_strings[TEXT_EXPLAIN_1]), &azul1);
+	texts[TEXT_EXPLAIN_2] = draw_text (ttf18_burbank, _(text_strings[TEXT_EXPLAIN_2]), &azul1);
+	texts[TEXT_EXPLAIN_3] = draw_text (ttf18_burbank, _(text_strings[TEXT_EXPLAIN_3]), &azul1);
+	texts[TEXT_EXPLAIN_4] = draw_text (ttf18_burbank, _(text_strings[TEXT_EXPLAIN_4]), &azul1);
 	
+	TTF_CloseFont (ttf18_burbank);
 	TTF_CloseFont (ttf48_klickclack);
 	TTF_CloseFont (ttf52_klickclack);
 	TTF_CloseFont (ttf40_klickclack);
@@ -2390,6 +2742,12 @@ void delete_bag (BeanBag *p) {
 int map_button_in_intro (int x, int y) {
 	if (x >= 381 && x < 627 && y >= 324 && y < 348) return BUTTON_UI_INSTRUCTIONS;
 	if (x >= 381 && x < 627 && y >= 380 && y < 404) return BUTTON_UI_PLAY_GAME;
+	return BUTTON_NONE;
+}
+
+int map_button_in_explain (int x, int y, int escena) {
+	if (escena < 2 && x >= 470 && x < 470 + texts[TEXT_NEXT_PAGE]->w && y >= 339 && y < 339 + texts[TEXT_NEXT_PAGE]->h) return BUTTON_NEXT_PAGE;
+	if (escena == 2 && x >= 386 - (texts[TEXT_PLAY_GAME]->w / 2) && x < 386 + (texts[TEXT_PLAY_GAME]->w / 2) && y >= 378 && y < 383 + texts[TEXT_PLAY_GAME]->h) return BUTTON_EXPLAIN_PLAY_GAME;
 	return BUTTON_NONE;
 }
 
